@@ -20,6 +20,8 @@ export interface Expense {
   // Joined data
   paid_by_name?: string;
   paid_by_avatar?: string;
+  added_by_name?: string;
+  added_by_avatar?: string;
   category_name?: string;
   category_name_bn?: string;
 }
@@ -45,7 +47,6 @@ export const useExpenses = (limit?: number) => {
         .from("expenses")
         .select(`
           *,
-          profiles!expenses_paid_by_fkey(full_name, avatar_url),
           expense_categories(name, name_bn)
         `)
         .order("created_at", { ascending: false });
@@ -55,13 +56,23 @@ export const useExpenses = (limit?: number) => {
       }
 
       const { data, error } = await query;
-
       if (error) throw error;
+
+      // Fetch profiles separately for paid_by and added_by
+      const userIds = [...new Set(data.flatMap((e: any) => [e.paid_by, e.added_by]))];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, full_name, avatar_url")
+        .in("user_id", userIds);
+
+      const profileMap = new Map(profiles?.map((p: any) => [p.user_id, p]));
 
       return data.map((expense: any) => ({
         ...expense,
-        paid_by_name: expense.profiles?.full_name,
-        paid_by_avatar: expense.profiles?.avatar_url,
+        paid_by_name: profileMap.get(expense.paid_by)?.full_name,
+        paid_by_avatar: profileMap.get(expense.paid_by)?.avatar_url,
+        added_by_name: profileMap.get(expense.added_by)?.full_name,
+        added_by_avatar: profileMap.get(expense.added_by)?.avatar_url,
         category_name: expense.expense_categories?.name,
         category_name_bn: expense.expense_categories?.name_bn,
       }));

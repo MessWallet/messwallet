@@ -1,6 +1,8 @@
+import { Link } from "react-router-dom";
 import { Bell, Search, Menu } from "lucide-react";
 import { RoleBadge } from "@/components/ui/RoleBadge";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUnreadCount } from "@/hooks/useNotifications";
 
 interface HeaderProps {
   title: string;
@@ -10,6 +12,7 @@ interface HeaderProps {
 
 export const Header = ({ title, titleBn, onMenuClick }: HeaderProps) => {
   const { profile, userRole } = useAuth();
+  const { data: unreadCount } = useUnreadCount();
 
   return (
     <header className="sticky top-0 z-40 glass-card rounded-none border-0 border-b border-white/10 px-6 py-4">
@@ -30,18 +33,23 @@ export const Header = ({ title, titleBn, onMenuClick }: HeaderProps) => {
             <input type="text" placeholder="Search..." className="bg-transparent border-none outline-none text-sm w-40 placeholder:text-muted-foreground" />
           </div>
 
-          <button className="relative p-2 hover:bg-white/5 rounded-lg transition-colors">
+          <Link to="/history" className="relative p-2 hover:bg-white/5 rounded-lg transition-colors">
             <Bell className="w-5 h-5" />
-          </button>
+            {unreadCount && unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
+          </Link>
 
           {profile && (
-            <div className="flex items-center gap-3">
+            <Link to="/profile" className="flex items-center gap-3">
               <img src={profile.avatar_url} alt="Profile" className="w-10 h-10 rounded-xl border border-white/20 object-cover" />
               <div className="hidden sm:block">
                 <p className="text-sm font-medium">{profile.full_name}</p>
                 {userRole && <RoleBadge role={userRole.role} className="mt-0.5" />}
               </div>
-            </div>
+            </Link>
           )}
         </div>
       </div>
