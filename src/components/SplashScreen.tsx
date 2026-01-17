@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import logoImage from "@/assets/logo.png";
 
 interface SplashScreenProps {
   onComplete: () => void;
@@ -31,175 +32,144 @@ export const SplashScreen = ({ onComplete }: SplashScreenProps) => {
         exit={{ opacity: 0 }}
         className="fixed inset-0 z-[9999] bg-black flex items-center justify-center overflow-hidden"
       >
-        {/* Background glow */}
+        {/* Background glow - teal */}
         <motion.div
           initial={{ opacity: 0 }}
-          animate={{ opacity: animationPhase >= 1 ? 0.3 : 0 }}
+          animate={{ opacity: animationPhase >= 1 ? 0.4 : 0 }}
           transition={{ duration: 1 }}
-          className="absolute inset-0 bg-gradient-radial from-primary/30 via-transparent to-transparent"
+          className="absolute inset-0"
           style={{
-            background: "radial-gradient(circle at center, hsla(168, 76%, 36%, 0.2) 0%, transparent 60%)",
+            background: "radial-gradient(circle at center, hsla(168, 76%, 36%, 0.25) 0%, transparent 60%)",
           }}
         />
 
-        <div className="relative w-64 h-64 md:w-80 md:h-80">
-          {/* Wallet Base - Teal with neon glow */}
-          <motion.svg
-            viewBox="0 0 100 100"
-            className="absolute inset-0 w-full h-full"
+        {/* Secondary gold glow */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: animationPhase >= 3 ? 0.3 : 0 }}
+          transition={{ duration: 0.8 }}
+          className="absolute inset-0"
+          style={{
+            background: "radial-gradient(circle at 60% 40%, hsla(38, 92%, 50%, 0.15) 0%, transparent 50%)",
+          }}
+        />
+
+        <div className="relative w-72 h-72 md:w-96 md:h-96 flex items-center justify-center">
+          {/* Outer teal neon ring */}
+          <motion.div
+            className="absolute w-full h-full rounded-full"
+            initial={{ opacity: 0, scale: 0.3, rotate: -180 }}
+            animate={{
+              opacity: animationPhase >= 1 ? 0.6 : 0,
+              scale: animationPhase >= 1 ? 1 : 0.3,
+              rotate: animationPhase >= 1 ? 0 : -180,
+            }}
+            transition={{ duration: 1, ease: "easeOut" }}
+            style={{
+              border: "2px solid hsla(168, 76%, 50%, 0.4)",
+              boxShadow: "0 0 40px hsla(168, 76%, 50%, 0.3), inset 0 0 40px hsla(168, 76%, 50%, 0.1)",
+            }}
+          />
+
+          {/* Inner glow circle */}
+          <motion.div
+            className="absolute w-3/4 h-3/4 rounded-full"
             initial={{ opacity: 0, scale: 0.5 }}
             animate={{
-              opacity: animationPhase >= 1 ? 1 : 0,
-              scale: animationPhase >= 1 ? 1 : 0.5,
+              opacity: animationPhase >= 2 ? 0.4 : 0,
+              scale: animationPhase >= 2 ? 1 : 0.5,
+            }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            style={{
+              background: "radial-gradient(circle, hsla(168, 76%, 50%, 0.15) 0%, transparent 70%)",
+            }}
+          />
+
+          {/* Logo Image - Main element */}
+          <motion.div
+            className="relative z-10"
+            initial={{ opacity: 0, scale: 0.3, y: 50 }}
+            animate={{
+              opacity: animationPhase >= 2 ? 1 : 0,
+              scale: animationPhase >= 2 ? 1 : 0.3,
+              y: animationPhase >= 2 ? 0 : 50,
             }}
             transition={{ duration: 0.8, ease: "easeOut" }}
           >
-            {/* Wallet body */}
-            <motion.path
-              d="M15 25 L85 25 L85 80 L15 80 Z"
-              fill="none"
-              stroke="hsl(168, 76%, 36%)"
-              strokeWidth="3"
-              filter="url(#glow)"
-              initial={{ pathLength: 0 }}
-              animate={{ pathLength: animationPhase >= 1 ? 1 : 0 }}
-              transition={{ duration: 1, ease: "easeInOut" }}
-            />
-            {/* Wallet flap */}
-            <motion.path
-              d="M15 25 L15 35 Q50 50 85 35 L85 25"
-              fill="none"
-              stroke="hsl(168, 76%, 36%)"
-              strokeWidth="3"
-              filter="url(#glow)"
-              initial={{ pathLength: 0 }}
-              animate={{ pathLength: animationPhase >= 1 ? 1 : 0 }}
-              transition={{ duration: 1, delay: 0.3, ease: "easeInOut" }}
-            />
-            <defs>
-              <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-                <feGaussianBlur stdDeviation="2" result="blur" />
-                <feMerge>
-                  <feMergeNode in="blur" />
-                  <feMergeNode in="SourceGraphic" />
-                </feMerge>
-              </filter>
-              <filter id="goldGlow" x="-50%" y="-50%" width="200%" height="200%">
-                <feGaussianBlur stdDeviation="1.5" result="blur" />
-                <feMerge>
-                  <feMergeNode in="blur" />
-                  <feMergeNode in="SourceGraphic" />
-                </feMerge>
-              </filter>
-            </defs>
-          </motion.svg>
-
-          {/* Spoon - flies from top-left */}
-          <motion.svg
-            viewBox="0 0 100 100"
-            className="absolute inset-0 w-full h-full"
-            initial={{ x: -150, y: -150, opacity: 0, rotate: -45 }}
-            animate={{
-              x: animationPhase >= 2 ? 0 : -150,
-              y: animationPhase >= 2 ? 0 : -150,
-              opacity: animationPhase >= 2 ? 1 : 0,
-              rotate: animationPhase >= 2 ? 0 : -45,
-            }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-          >
-            <motion.ellipse
-              cx="35"
-              cy="45"
-              rx="8"
-              ry="12"
-              fill="none"
-              stroke="hsl(38, 92%, 50%)"
-              strokeWidth="2"
-              filter="url(#goldGlow)"
-            />
-            <motion.line
-              x1="35"
-              y1="57"
-              x2="35"
-              y2="75"
-              stroke="hsl(38, 92%, 50%)"
-              strokeWidth="2"
-              filter="url(#goldGlow)"
-            />
-          </motion.svg>
-
-          {/* Fork - glides from bottom-right */}
-          <motion.svg
-            viewBox="0 0 100 100"
-            className="absolute inset-0 w-full h-full"
-            initial={{ x: 150, y: 150, opacity: 0, rotate: 45 }}
-            animate={{
-              x: animationPhase >= 2 ? 0 : 150,
-              y: animationPhase >= 2 ? 0 : 150,
-              opacity: animationPhase >= 2 ? 1 : 0,
-              rotate: animationPhase >= 2 ? 0 : 45,
-            }}
-            transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
-          >
-            {/* Fork tines */}
-            <motion.line x1="55" y1="35" x2="55" y2="50" stroke="hsl(38, 92%, 50%)" strokeWidth="2" filter="url(#goldGlow)" />
-            <motion.line x1="60" y1="35" x2="60" y2="50" stroke="hsl(38, 92%, 50%)" strokeWidth="2" filter="url(#goldGlow)" />
-            <motion.line x1="65" y1="35" x2="65" y2="50" stroke="hsl(38, 92%, 50%)" strokeWidth="2" filter="url(#goldGlow)" />
-            {/* Fork handle */}
-            <motion.path
-              d="M55 50 Q60 55 65 50 L60 75"
-              fill="none"
-              stroke="hsl(38, 92%, 50%)"
-              strokeWidth="2"
-              filter="url(#goldGlow)"
-            />
-          </motion.svg>
-
-          {/* Coins - cascade from top-right */}
-          {[0, 1, 2].map((i) => (
-            <motion.div
-              key={i}
-              className="absolute"
-              initial={{
-                x: 150 + i * 10,
-                y: -100 - i * 20,
-                opacity: 0,
-                rotate: 360,
+            <motion.img
+              src={logoImage}
+              alt="MessWallet Logo"
+              className="w-40 h-40 md:w-52 md:h-52 object-contain"
+              style={{
+                filter: animationPhase >= 3 
+                  ? "drop-shadow(0 0 20px hsla(168, 76%, 50%, 0.6)) drop-shadow(0 0 40px hsla(168, 76%, 50%, 0.3))"
+                  : "drop-shadow(0 0 10px hsla(168, 76%, 50%, 0.3))",
               }}
               animate={{
-                x: animationPhase >= 3 ? 65 + i * 5 : 150 + i * 10,
-                y: animationPhase >= 3 ? 10 + i * 8 : -100 - i * 20,
-                opacity: animationPhase >= 3 ? 1 : 0,
-                rotate: animationPhase >= 3 ? 0 : 360,
+                filter: animationPhase >= 4 
+                  ? [
+                      "drop-shadow(0 0 20px hsla(168, 76%, 50%, 0.6)) drop-shadow(0 0 40px hsla(168, 76%, 50%, 0.3))",
+                      "drop-shadow(0 0 30px hsla(168, 76%, 50%, 0.8)) drop-shadow(0 0 60px hsla(168, 76%, 50%, 0.5))",
+                      "drop-shadow(0 0 20px hsla(168, 76%, 50%, 0.6)) drop-shadow(0 0 40px hsla(168, 76%, 50%, 0.3))",
+                    ]
+                  : undefined,
               }}
-              transition={{
-                duration: 0.6,
-                delay: i * 0.15,
-                ease: "easeOut",
-              }}
-              style={{ top: "20%", right: "20%" }}
-            >
-              <div
-                className="w-6 h-6 md:w-8 md:h-8 rounded-full border-2"
+              transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+            />
+          </motion.div>
+
+          {/* Energy trails - diagonal lines */}
+          {animationPhase >= 1 && (
+            <>
+              {/* Top-left trail */}
+              <motion.div
+                className="absolute w-32 h-0.5"
+                initial={{ opacity: 0, x: -100, y: -100, rotate: 45 }}
+                animate={{ opacity: [0, 0.8, 0], x: 0, y: 0 }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
                 style={{
-                  background: "linear-gradient(135deg, hsl(38, 92%, 60%) 0%, hsl(38, 92%, 40%) 100%)",
-                  borderColor: "hsl(38, 92%, 70%)",
-                  boxShadow: "0 0 15px hsla(38, 92%, 50%, 0.6)",
+                  background: "linear-gradient(90deg, transparent, hsla(168, 76%, 50%, 0.8), transparent)",
+                  top: "30%",
+                  left: "10%",
                 }}
               />
-            </motion.div>
-          ))}
+              {/* Bottom-right trail */}
+              <motion.div
+                className="absolute w-32 h-0.5"
+                initial={{ opacity: 0, x: 100, y: 100, rotate: 45 }}
+                animate={{ opacity: [0, 0.8, 0], x: 0, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
+                style={{
+                  background: "linear-gradient(90deg, transparent, hsla(38, 92%, 60%, 0.8), transparent)",
+                  bottom: "30%",
+                  right: "10%",
+                }}
+              />
+              {/* Top-right golden trail */}
+              <motion.div
+                className="absolute w-24 h-0.5"
+                initial={{ opacity: 0, x: 100, y: -100, rotate: -45 }}
+                animate={{ opacity: [0, 0.8, 0], x: 0, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
+                style={{
+                  background: "linear-gradient(90deg, transparent, hsla(38, 92%, 50%, 0.8), transparent)",
+                  top: "25%",
+                  right: "15%",
+                }}
+              />
+            </>
+          )}
 
-          {/* Particle trails */}
+          {/* Particle effects */}
           {animationPhase >= 2 && (
             <>
-              {[...Array(8)].map((_, i) => (
+              {[...Array(12)].map((_, i) => (
                 <motion.div
                   key={`particle-${i}`}
-                  className="absolute w-1 h-1 rounded-full"
+                  className="absolute w-1.5 h-1.5 rounded-full"
                   initial={{
-                    x: Math.random() * 200 - 100,
-                    y: Math.random() * 200 - 100,
+                    x: Math.cos((i * 30 * Math.PI) / 180) * 150,
+                    y: Math.sin((i * 30 * Math.PI) / 180) * 150,
                     opacity: 0,
                     scale: 0,
                   }}
@@ -210,15 +180,54 @@ export const SplashScreen = ({ onComplete }: SplashScreenProps) => {
                     scale: [0, 1.5, 0],
                   }}
                   transition={{
-                    duration: 1.5,
-                    delay: i * 0.1,
+                    duration: 1.2,
+                    delay: i * 0.08,
                     ease: "easeOut",
                   }}
                   style={{
                     top: "50%",
                     left: "50%",
-                    background: i % 2 === 0 ? "hsl(168, 76%, 50%)" : "hsl(38, 92%, 60%)",
-                    boxShadow: `0 0 10px ${i % 2 === 0 ? "hsl(168, 76%, 50%)" : "hsl(38, 92%, 60%)"}`,
+                    background: i % 3 === 0 
+                      ? "hsl(168, 76%, 50%)" 
+                      : i % 3 === 1 
+                        ? "hsl(38, 92%, 60%)" 
+                        : "hsl(25, 95%, 53%)",
+                    boxShadow: `0 0 12px ${
+                      i % 3 === 0 
+                        ? "hsl(168, 76%, 50%)" 
+                        : i % 3 === 1 
+                          ? "hsl(38, 92%, 60%)" 
+                          : "hsl(25, 95%, 53%)"
+                    }`,
+                  }}
+                />
+              ))}
+            </>
+          )}
+
+          {/* Floating sparkles around logo */}
+          {animationPhase >= 3 && (
+            <>
+              {[...Array(6)].map((_, i) => (
+                <motion.div
+                  key={`sparkle-${i}`}
+                  className="absolute w-2 h-2"
+                  initial={{ opacity: 0 }}
+                  animate={{
+                    opacity: [0, 1, 0],
+                    scale: [0.5, 1, 0.5],
+                    y: [0, -20, 0],
+                  }}
+                  transition={{
+                    duration: 2,
+                    delay: i * 0.3,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                  style={{
+                    top: `${30 + Math.random() * 40}%`,
+                    left: `${20 + i * 12}%`,
+                    background: "radial-gradient(circle, hsla(38, 92%, 70%, 1) 0%, transparent 70%)",
                   }}
                 />
               ))}
@@ -230,12 +239,12 @@ export const SplashScreen = ({ onComplete }: SplashScreenProps) => {
             className="absolute inset-0 rounded-full"
             initial={{ opacity: 0, scale: 0.5 }}
             animate={{
-              opacity: animationPhase >= 4 ? [0, 0.8, 0] : 0,
-              scale: animationPhase >= 4 ? [0.5, 1.5, 2] : 0.5,
+              opacity: animationPhase >= 4 ? [0, 0.6, 0] : 0,
+              scale: animationPhase >= 4 ? [0.8, 1.8, 2.5] : 0.5,
             }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
+            transition={{ duration: 1, ease: "easeOut" }}
             style={{
-              background: "radial-gradient(circle, hsla(168, 76%, 50%, 0.4) 0%, transparent 70%)",
+              background: "radial-gradient(circle, hsla(168, 76%, 50%, 0.5) 0%, hsla(38, 92%, 50%, 0.2) 40%, transparent 70%)",
             }}
           />
         </div>
@@ -243,25 +252,32 @@ export const SplashScreen = ({ onComplete }: SplashScreenProps) => {
         {/* App name */}
         <motion.div
           className="absolute bottom-20 text-center"
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 30 }}
           animate={{
             opacity: animationPhase >= 4 ? 1 : 0,
-            y: animationPhase >= 4 ? 0 : 20,
+            y: animationPhase >= 4 ? 0 : 30,
           }}
           transition={{ duration: 0.6, ease: "easeOut" }}
         >
           <h1
-            className="text-3xl md:text-4xl font-bold"
+            className="text-3xl md:text-4xl font-bold tracking-wide"
             style={{
-              background: "linear-gradient(135deg, hsl(168, 76%, 50%) 0%, hsl(38, 92%, 60%) 100%)",
+              background: "linear-gradient(135deg, hsl(168, 76%, 50%) 0%, hsl(168, 76%, 40%) 50%, hsl(38, 92%, 60%) 100%)",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
-              textShadow: "0 0 30px hsla(168, 76%, 50%, 0.5)",
+              textShadow: "0 0 40px hsla(168, 76%, 50%, 0.6)",
             }}
           >
             MessWallet
           </h1>
-          <p className="text-muted-foreground mt-2 text-sm">Smart Mess Management</p>
+          <motion.p 
+            className="text-muted-foreground mt-2 text-sm tracking-widest uppercase"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: animationPhase >= 4 ? 0.7 : 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            Smart Mess Management
+          </motion.p>
         </motion.div>
       </motion.div>
     </AnimatePresence>
