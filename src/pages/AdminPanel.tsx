@@ -7,6 +7,8 @@ import { useMembers } from "@/hooks/useMembers";
 import { useBudgets, useCreateBudget, useUpdateBudget, useCurrentBudget, useDeleteBudget } from "@/hooks/useBudgets";
 import { useFinanceStats } from "@/hooks/useFinanceStats";
 import { useUpdateUserRole, useClearAllData } from "@/hooks/useRoles";
+import { useDeleteMember } from "@/hooks/useDeleteMember";
+import { useNotifications, useDeleteNotification } from "@/hooks/useNotifications";
 import {
   Shield,
   Settings,
@@ -21,10 +23,13 @@ import {
   UserCog,
   Crown,
   AlertCircle,
+  Bell,
+  UserX,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Dialog,
   DialogContent,
@@ -51,6 +56,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Navigate } from "react-router-dom";
+import { format } from "date-fns";
 
 const months = [
   "January", "February", "March", "April", "May", "June",
@@ -65,11 +71,14 @@ const AdminPanel = () => {
   const { data: budgets, isLoading: budgetsLoading } = useBudgets();
   const { data: currentBudget } = useCurrentBudget();
   const { data: stats } = useFinanceStats();
+  const { data: notifications } = useNotifications();
   const createBudget = useCreateBudget();
   const updateBudget = useUpdateBudget();
   const deleteBudget = useDeleteBudget();
   const updateUserRole = useUpdateUserRole();
   const clearAllData = useClearAllData();
+  const deleteMember = useDeleteMember();
+  const deleteNotification = useDeleteNotification();
 
   const [isBudgetDialogOpen, setIsBudgetDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -91,6 +100,8 @@ const AdminPanel = () => {
   const admins = members?.filter(
     (m) => m.role === "founder" || m.role === "secondary_admin" || m.role === "tertiary_admin"
   );
+
+  const nonFounderMembers = members?.filter((m) => m.role !== "founder");
 
   const handleCreateBudget = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -154,6 +165,10 @@ const AdminPanel = () => {
     await clearAllData.mutateAsync();
   };
 
+  const handleDeleteMember = async (userId: string) => {
+    await deleteMember.mutateAsync(userId);
+  };
+
   return (
     <DashboardLayout title="Admin Panel" titleBn="অ্যাডমিন প্যানেল">
       <div className="space-y-6">
@@ -196,7 +211,7 @@ const AdminPanel = () => {
           </GlassCard>
         </div>
 
-        {/* Founder Only: Clear All Data */}
+        {/* Founder Only: Danger Zone */}
         {isFounder && (
           <GlassCard className="p-6 border-destructive/30">
             <div className="flex items-center justify-between">
@@ -256,6 +271,83 @@ const AdminPanel = () => {
           </GlassCard>
         )}
 
+        {/* Member Delete Section (Admin) */}
+        <GlassCard className="p-6 border-destructive/20">
+          <div className="flex items-center gap-3 mb-4">
+            <UserX className="w-5 h-5 text-destructive" />
+            <h3 className="text-lg font-semibold">Delete Member Accounts</h3>
+            <span className="text-xs bg-destructive/20 text-destructive px-2 py-1 rounded-full">Admin Only</span>
+          </div>
+          <p className="text-sm text-muted-foreground mb-4">
+            Permanently delete member accounts. Founder account cannot be deleted.
+          </p>
+
+          {membersLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="w-6 h-6 animate-spin text-primary" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {nonFounderMembers?.map((member) => (
+                <div
+                  key={member.id}
+                  className="flex items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/10"
+                >
+                  <img
+                    src={member.avatar_url}
+                    alt={member.full_name}
+                    className="w-14 h-14 rounded-xl object-cover"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{member.full_name}</p>
+                    <RoleBadge role={member.role} size="sm" />
+                  </div>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive" size="sm" className="shrink-0">
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent className="glass-card border-destructive/30">
+                      <AlertDialogHeader>
+                        <AlertDialogTitle className="text-destructive">Delete Member Account</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          <div className="flex items-center gap-3 p-4 my-4 rounded-xl bg-white/5">
+                            <img
+                              src={member.avatar_url}
+                              alt={member.full_name}
+                              className="w-12 h-12 rounded-xl object-cover"
+                            />
+                            <div>
+                              <p className="font-medium text-foreground">{member.full_name}</p>
+                              <p className="text-sm">{member.email}</p>
+                            </div>
+                          </div>
+                          <p>This will permanently delete this member's account and all their data. This action cannot be undone.</p>
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => handleDeleteMember(member.user_id)}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          disabled={deleteMember.isPending}
+                        >
+                          {deleteMember.isPending ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            "Delete Account"
+                          )}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              ))}
+            </div>
+          )}
+        </GlassCard>
+
         {/* Role Management (Founder Only) */}
         {isFounder && (
           <GlassCard className="p-6">
@@ -312,6 +404,52 @@ const AdminPanel = () => {
             )}
           </GlassCard>
         )}
+
+        {/* Notification Management */}
+        <GlassCard className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <Bell className="w-5 h-5 text-primary" />
+              <h3 className="text-lg font-semibold">Notifications</h3>
+              <span className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded-full">
+                {notifications?.length || 0} total
+              </span>
+            </div>
+          </div>
+
+          {!notifications || notifications.length === 0 ? (
+            <div className="text-center py-8">
+              <Bell className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
+              <p className="text-muted-foreground">No notifications</p>
+            </div>
+          ) : (
+            <ScrollArea className="h-[200px]">
+              <div className="space-y-2 pr-4">
+                {notifications.slice(0, 10).map((notification) => (
+                  <div
+                    key={notification.id}
+                    className="flex items-center justify-between p-3 rounded-xl bg-white/5"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate">{notification.title}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {format(new Date(notification.created_at), "MMM dd, HH:mm")}
+                      </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-destructive hover:bg-destructive/20 shrink-0"
+                      onClick={() => deleteNotification.mutate(notification.id)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          )}
+        </GlassCard>
 
         {/* Admin List */}
         <GlassCard className="p-6">

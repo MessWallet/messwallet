@@ -155,7 +155,12 @@ const Dashboard = () => {
                     </SelectTrigger>
                     <SelectContent>
                       {members?.map((m) => (
-                        <SelectItem key={m.user_id} value={m.user_id}>{m.full_name}</SelectItem>
+                        <SelectItem key={m.user_id} value={m.user_id}>
+                          <div className="flex items-center gap-2">
+                            <img src={m.avatar_url} className="w-5 h-5 rounded-full" alt="" />
+                            {m.full_name}
+                          </div>
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
