@@ -89,3 +89,23 @@ export const useCreateDeposit = () => {
     },
   });
 };
+
+export const useDeleteDeposit = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("deposits").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["deposits"] });
+      queryClient.invalidateQueries({ queryKey: ["finance-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["members"] });
+      toast.success("Deposit deleted successfully!");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+};

@@ -1,18 +1,20 @@
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { GlassCard } from "@/components/ui/GlassCard";
-import { useTodayMealsSummary, useUpdateMeal } from "@/hooks/useMeals";
+import { useTodayMealsSummary, useUpdateMeal, useMeals, useDeleteMeal } from "@/hooks/useMeals";
 import { useAuth } from "@/contexts/AuthContext";
-import { Utensils, Check, X, Loader2 } from "lucide-react";
+import { Utensils, Check, X, Loader2, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 const Meals = () => {
   const { user, isAdmin } = useAuth();
   const { data: mealsData, isLoading } = useTodayMealsSummary();
-  const updateMeal = useUpdateMeal();
-
   const today = new Date().toISOString().split("T")[0];
-  const isToday = true; // We're only showing today for now
+  const { data: todayMeals } = useMeals(today);
+  const updateMeal = useUpdateMeal();
+  const deleteMeal = useDeleteMeal();
 
   const handleToggleMeal = async (userId: string, mealType: "lunch" | "dinner", currentValue: boolean) => {
     // Users can only update their own meals on the same day, admins can update anyone's
@@ -24,6 +26,16 @@ const Meals = () => {
       date: today,
       [mealType]: !currentValue,
     });
+  };
+
+  const handleDeleteMeal = async (mealId: string) => {
+    await deleteMeal.mutateAsync(mealId);
+  };
+
+  // Get meal ID for a user from today's meals
+  const getMealId = (userId: string): string | null => {
+    const meal = todayMeals?.find(m => m.user_id === userId);
+    return meal?.id || null;
   };
 
   return (
@@ -79,22 +91,27 @@ const Meals = () => {
           ) : (
             <div className="space-y-2">
               {/* Header */}
-              <div className="grid grid-cols-4 gap-4 px-4 py-2 text-sm font-medium text-muted-foreground">
+              <div className="grid grid-cols-5 gap-4 px-4 py-2 text-sm font-medium text-muted-foreground">
                 <span>Member</span>
                 <span className="text-center">Lunch</span>
                 <span className="text-center">Dinner</span>
                 <span className="text-center">Total</span>
+                {isAdmin && <span className="text-center">Actions</span>}
               </div>
 
               {/* Members */}
               {mealsData?.summary.map((member) => {
                 const canEdit = member.userId === user?.id || isAdmin;
                 const mealCount = (member.lunch ? 1 : 0) + (member.dinner ? 1 : 0);
+                const mealId = getMealId(member.userId);
 
                 return (
                   <div
                     key={member.userId}
-                    className="grid grid-cols-4 gap-4 items-center p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-colors"
+                    className={cn(
+                      "grid gap-4 items-center p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-colors",
+                      isAdmin ? "grid-cols-5" : "grid-cols-4"
+                    )}
                   >
                     <div className="flex items-center gap-3">
                       <img
@@ -145,6 +162,39 @@ const Meals = () => {
                         {mealCount}
                       </span>
                     </div>
+
+                    {isAdmin && (
+                      <div className="flex justify-center">
+                        {mealId ? (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/20">
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent className="glass-card border-white/10">
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Meal Record</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete {member.userName}'s meal record for today? This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDeleteMeal(mealId)}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">No record</span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 );
               })}
