@@ -4,17 +4,17 @@ import {
   Receipt, 
   Utensils, 
   Users, 
-  Wallet,
-  Settings,
-  Bell,
   LogOut,
   PiggyBank,
   ChevronLeft,
-  Shield
+  Shield,
+  History,
+  User
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import logo from "@/assets/logo.png";
 
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", labelBn: "ড্যাশবোর্ড", path: "/dashboard" },
@@ -22,12 +22,13 @@ const navItems = [
   { icon: Utensils, label: "Meals", labelBn: "খাবার", path: "/meals" },
   { icon: PiggyBank, label: "Deposits", labelBn: "জমা", path: "/deposits" },
   { icon: Users, label: "Members", labelBn: "সদস্য", path: "/members" },
+  { icon: History, label: "History", labelBn: "ইতিহাস", path: "/history" },
 ];
 
 export const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { signOut, isAdmin } = useAuth();
+  const { signOut, isAdmin, profile } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
 
   const handleLogout = async () => {
@@ -45,10 +46,7 @@ export const Sidebar = () => {
     >
       <div className="p-4 border-b border-sidebar-border">
         <Link to="/dashboard" className="flex items-center gap-3">
-          <div className="relative shrink-0">
-            <Wallet className="w-8 h-8 text-primary" />
-            <Utensils className="w-4 h-4 text-secondary absolute -bottom-0.5 -right-0.5" />
-          </div>
+          <img src={logo} alt="MessWallet" className="w-10 h-10 object-contain" />
           {!collapsed && (
             <span className="text-xl font-bold text-gradient-primary">MessWallet</span>
           )}
@@ -87,6 +85,20 @@ export const Sidebar = () => {
             )}
           </Link>
         )}
+        
+        {/* Profile Button */}
+        <Link 
+          to="/profile" 
+          className={cn("nav-item", location.pathname === "/profile" && "active")}
+        >
+          {profile?.avatar_url ? (
+            <img src={profile.avatar_url} alt="Profile" className="w-5 h-5 rounded-full object-cover" />
+          ) : (
+            <User className="w-5 h-5" />
+          )}
+          {!collapsed && <span className="font-medium">Profile</span>}
+        </Link>
+
         <button onClick={handleLogout} className="nav-item w-full text-destructive hover:bg-destructive/10">
           <LogOut className="w-5 h-5" />
           {!collapsed && <span>Logout</span>}
