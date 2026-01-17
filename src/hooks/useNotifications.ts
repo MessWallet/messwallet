@@ -58,7 +58,6 @@ export const useUnreadCount = () => {
 
 export const useMarkAsRead = () => {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async (notificationId: string) => {
@@ -127,6 +126,78 @@ export const useCreateNotification = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
       queryClient.invalidateQueries({ queryKey: ["notifications-unread"] });
+    },
+  });
+};
+
+export const useSendGlobalNotification = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      title,
+      message,
+      type = "info",
+    }: {
+      title: string;
+      message: string;
+      type?: string;
+    }) => {
+      // Get all user profiles
+      const { data: profiles, error: profilesError } = await supabase
+        .from("profiles")
+        .select("user_id");
+
+      if (profilesError) throw profilesError;
+
+      // Create notifications for all users
+      const notifications = profiles.map((p) => ({
+        user_id: p.user_id,
+        title,
+        message,
+        type,
+      }));
+
+      const { error } = await supabase.from("notifications").insert(notifications);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications-unread"] });
+      toast.success("Global notification sent to all users!");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+};
+
+export const useAllNotifications = () => {
+  return useQuery({
+    queryKey: ["all-notifications"],
+    queryFn: async (): Promise<(Notification & { user_name?: string; user_avatar?: string })[]> => {
+      const { data, error } = await supabase
+        .from("notifications")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(100);
+
+      if (error) throw error;
+
+      // Fetch user profiles
+      const userIds = [...new Set(data.map((n) => n.user_id))];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, full_name, avatar_url")
+        .in("user_id", userIds);
+
+      const profileMap = new Map(profiles?.map((p) => [p.user_id, p]));
+
+      return data.map((n: any) => ({
+        ...n,
+        user_name: profileMap.get(n.user_id)?.full_name,
+        user_avatar: profileMap.get(n.user_id)?.avatar_url,
+      }));
     },
   });
 };

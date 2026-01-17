@@ -8,11 +8,11 @@ import { useBudgets, useCreateBudget, useUpdateBudget, useCurrentBudget, useDele
 import { useFinanceStats } from "@/hooks/useFinanceStats";
 import { useUpdateUserRole, useClearAllData } from "@/hooks/useRoles";
 import { useDeleteMember } from "@/hooks/useDeleteMember";
-import { useNotifications, useDeleteNotification } from "@/hooks/useNotifications";
+import { DataDeletionSection } from "@/components/admin/DataDeletionSection";
+import { GlobalNotificationSection } from "@/components/admin/GlobalNotificationSection";
 import {
   Shield,
   Settings,
-  Users,
   Calendar,
   DollarSign,
   AlertTriangle,
@@ -23,13 +23,11 @@ import {
   UserCog,
   Crown,
   AlertCircle,
-  Bell,
   UserX,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Dialog,
   DialogContent,
@@ -56,7 +54,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Navigate } from "react-router-dom";
-import { format } from "date-fns";
 
 const months = [
   "January", "February", "March", "April", "May", "June",
@@ -66,19 +63,17 @@ const months = [
 type AppRole = "founder" | "secondary_admin" | "tertiary_admin" | "member";
 
 const AdminPanel = () => {
-  const { isAdmin, isFounder, user } = useAuth();
+  const { isAdmin, isFounder } = useAuth();
   const { data: members, isLoading: membersLoading } = useMembers();
   const { data: budgets, isLoading: budgetsLoading } = useBudgets();
   const { data: currentBudget } = useCurrentBudget();
   const { data: stats } = useFinanceStats();
-  const { data: notifications } = useNotifications();
   const createBudget = useCreateBudget();
   const updateBudget = useUpdateBudget();
   const deleteBudget = useDeleteBudget();
   const updateUserRole = useUpdateUserRole();
   const clearAllData = useClearAllData();
   const deleteMember = useDeleteMember();
-  const deleteNotification = useDeleteNotification();
 
   const [isBudgetDialogOpen, setIsBudgetDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -268,10 +263,14 @@ const AdminPanel = () => {
                 </AlertDialogContent>
               </AlertDialog>
             </div>
-          </GlassCard>
+        </GlassCard>
         )}
 
-        {/* Member Delete Section (Admin) */}
+        {/* Global Notification Sender */}
+        <GlobalNotificationSection />
+
+        {/* Data Deletion Center */}
+        <DataDeletionSection />
         <GlassCard className="p-6 border-destructive/20">
           <div className="flex items-center gap-3 mb-4">
             <UserX className="w-5 h-5 text-destructive" />
@@ -404,52 +403,6 @@ const AdminPanel = () => {
             )}
           </GlassCard>
         )}
-
-        {/* Notification Management */}
-        <GlassCard className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <Bell className="w-5 h-5 text-primary" />
-              <h3 className="text-lg font-semibold">Notifications</h3>
-              <span className="text-xs bg-muted text-muted-foreground px-2 py-1 rounded-full">
-                {notifications?.length || 0} total
-              </span>
-            </div>
-          </div>
-
-          {!notifications || notifications.length === 0 ? (
-            <div className="text-center py-8">
-              <Bell className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
-              <p className="text-muted-foreground">No notifications</p>
-            </div>
-          ) : (
-            <ScrollArea className="h-[200px]">
-              <div className="space-y-2 pr-4">
-                {notifications.slice(0, 10).map((notification) => (
-                  <div
-                    key={notification.id}
-                    className="flex items-center justify-between p-3 rounded-xl bg-white/5"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{notification.title}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {format(new Date(notification.created_at), "MMM dd, HH:mm")}
-                      </p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-destructive hover:bg-destructive/20 shrink-0"
-                      onClick={() => deleteNotification.mutate(notification.id)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
-          )}
-        </GlassCard>
 
         {/* Admin List */}
         <GlassCard className="p-6">

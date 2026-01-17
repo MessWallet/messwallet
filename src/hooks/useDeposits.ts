@@ -70,18 +70,45 @@ export const useCreateDeposit = () => {
       if (!user) throw new Error("Not authenticated");
       if (!isAdmin) throw new Error("Only admins can add deposits");
 
-      const { error } = await supabase.from("deposits").insert({
+      const { data: deposit, error } = await supabase.from("deposits").insert({
         ...data,
         added_by: user.id,
         deposit_date: data.deposit_date || new Date().toISOString().split("T")[0],
-      });
+      }).select().single();
 
       if (error) throw error;
+
+      // Get depositor's name
+      const { data: depositor } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("user_id", data.user_id)
+        .single();
+
+      // Get all user profiles for notifications
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id");
+
+      if (profiles) {
+        const notifications = profiles.map((p) => ({
+          user_id: p.user_id,
+          title: "New Deposit Added",
+          message: `${depositor?.full_name || "Someone"} deposited ৳${data.amount}`,
+          type: "success",
+        }));
+
+        await supabase.from("notifications").insert(notifications);
+      }
+
+      return deposit;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["deposits"] });
       queryClient.invalidateQueries({ queryKey: ["finance-stats"] });
       queryClient.invalidateQueries({ queryKey: ["members"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications-unread"] });
       toast.success("Deposit added successfully!");
     },
     onError: (error: Error) => {
