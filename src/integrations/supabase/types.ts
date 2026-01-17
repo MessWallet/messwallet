@@ -14,16 +14,374 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      audit_log: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          new_value: Json | null
+          old_value: Json | null
+          record_id: string | null
+          table_name: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          record_id?: string | null
+          table_name: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          record_id?: string | null
+          table_name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      deposits: {
+        Row: {
+          added_by: string
+          amount: number
+          created_at: string
+          deposit_date: string
+          id: string
+          notes: string | null
+          user_id: string
+        }
+        Insert: {
+          added_by: string
+          amount: number
+          created_at?: string
+          deposit_date?: string
+          id?: string
+          notes?: string | null
+          user_id: string
+        }
+        Update: {
+          added_by?: string
+          amount?: number
+          created_at?: string
+          deposit_date?: string
+          id?: string
+          notes?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      expense_categories: {
+        Row: {
+          created_at: string
+          icon: string | null
+          id: string
+          name: string
+          name_bn: string | null
+        }
+        Insert: {
+          created_at?: string
+          icon?: string | null
+          id?: string
+          name: string
+          name_bn?: string | null
+        }
+        Update: {
+          created_at?: string
+          icon?: string | null
+          id?: string
+          name?: string
+          name_bn?: string | null
+        }
+        Relationships: []
+      }
+      expenses: {
+        Row: {
+          added_by: string
+          amount: number
+          category_id: string | null
+          created_at: string
+          expense_date: string
+          expense_type: string
+          id: string
+          is_emergency: boolean | null
+          item_name: string
+          notes: string | null
+          paid_by: string
+          quantity: number | null
+          unit: string | null
+          updated_at: string
+        }
+        Insert: {
+          added_by: string
+          amount: number
+          category_id?: string | null
+          created_at?: string
+          expense_date?: string
+          expense_type?: string
+          id?: string
+          is_emergency?: boolean | null
+          item_name: string
+          notes?: string | null
+          paid_by: string
+          quantity?: number | null
+          unit?: string | null
+          updated_at?: string
+        }
+        Update: {
+          added_by?: string
+          amount?: number
+          category_id?: string | null
+          created_at?: string
+          expense_date?: string
+          expense_type?: string
+          id?: string
+          is_emergency?: boolean | null
+          item_name?: string
+          notes?: string | null
+          paid_by?: string
+          quantity?: number | null
+          unit?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "expense_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meals: {
+        Row: {
+          auto_marked: boolean | null
+          created_at: string
+          dinner: boolean | null
+          id: string
+          lunch: boolean | null
+          marked_by: string | null
+          meal_date: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          auto_marked?: boolean | null
+          created_at?: string
+          dinner?: boolean | null
+          id?: string
+          lunch?: boolean | null
+          marked_by?: string | null
+          meal_date?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          auto_marked?: boolean | null
+          created_at?: string
+          dinner?: boolean | null
+          id?: string
+          lunch?: boolean | null
+          marked_by?: string | null
+          meal_date?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monthly_budgets: {
+        Row: {
+          budget_amount: number
+          created_at: string
+          id: string
+          is_locked: boolean | null
+          locked_by: string | null
+          low_balance_threshold: number | null
+          month: number
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          budget_amount: number
+          created_at?: string
+          id?: string
+          is_locked?: boolean | null
+          locked_by?: string | null
+          low_balance_threshold?: number | null
+          month: number
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          budget_amount?: number
+          created_at?: string
+          id?: string
+          is_locked?: boolean | null
+          locked_by?: string | null
+          low_balance_threshold?: number | null
+          month?: number
+          updated_at?: string
+          year?: number
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean | null
+          message: string
+          title: string
+          type: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          message: string
+          title: string
+          type?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          title?: string
+          type?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url: string
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      shared_bills: {
+        Row: {
+          added_by: string
+          amount: number
+          bill_month: number
+          bill_type: string
+          bill_year: number
+          created_at: string
+          id: string
+          notes: string | null
+          paid_by: string | null
+        }
+        Insert: {
+          added_by: string
+          amount: number
+          bill_month: number
+          bill_type: string
+          bill_year: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          paid_by?: string | null
+        }
+        Update: {
+          added_by?: string
+          amount?: number
+          bill_month?: number
+          bill_type?: string
+          bill_year?: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          paid_by?: string | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          assigned_by: string | null
+          created_at: string
+          id: string
+          permissions: Json | null
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          assigned_by?: string | null
+          created_at?: string
+          id?: string
+          permissions?: Json | null
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          assigned_by?: string | null
+          created_at?: string
+          id?: string
+          permissions?: Json | null
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_role: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_founder: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "founder" | "secondary_admin" | "tertiary_admin" | "member"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +508,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["founder", "secondary_admin", "tertiary_admin", "member"],
+    },
   },
 } as const
