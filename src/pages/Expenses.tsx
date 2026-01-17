@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { GlassCard } from "@/components/ui/GlassCard";
-import { useExpenses, useCreateExpense } from "@/hooks/useExpenses";
+import { useExpenses, useCreateExpense, useDeleteExpense } from "@/hooks/useExpenses";
 import { useCategories } from "@/hooks/useCategories";
 import { useMembers } from "@/hooks/useMembers";
 import { useAuth } from "@/contexts/AuthContext";
-import { Receipt, Plus, Search, Filter, Calendar, Loader2, AlertTriangle } from "lucide-react";
+import { Receipt, Plus, Search, Filter, Calendar, Loader2, AlertTriangle, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,11 +17,12 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 const Expenses = () => {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { data: expenses, isLoading } = useExpenses();
   const { data: categories } = useCategories();
   const { data: members } = useMembers();
   const createExpense = useCreateExpense();
+  const deleteExpense = useDeleteExpense();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -70,6 +72,10 @@ const Expenses = () => {
       notes: "",
     });
     setIsDialogOpen(false);
+  };
+
+  const handleDelete = async (id: string) => {
+    await deleteExpense.mutateAsync(id);
   };
 
   const filteredExpenses = expenses?.filter((expense) => {
@@ -294,12 +300,40 @@ const Expenses = () => {
                       </div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-bold text-destructive">-৳{expense.amount.toLocaleString()}</p>
-                    {expense.quantity && (
-                      <p className="text-xs text-muted-foreground">
-                        {expense.quantity} {expense.unit}
-                      </p>
+                  <div className="flex items-center gap-4">
+                    <div className="text-right">
+                      <p className="font-bold text-destructive">-৳{expense.amount.toLocaleString()}</p>
+                      {expense.quantity && (
+                        <p className="text-xs text-muted-foreground">
+                          {expense.quantity} {expense.unit}
+                        </p>
+                      )}
+                    </div>
+                    {isAdmin && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/20">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent className="glass-card border-white/10">
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Expense</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete "{expense.item_name}"? This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDelete(expense.id)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     )}
                   </div>
                 </div>

@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { GlassCard } from "@/components/ui/GlassCard";
-import { useDeposits, useCreateDeposit } from "@/hooks/useDeposits";
+import { useDeposits, useCreateDeposit, useDeleteDeposit } from "@/hooks/useDeposits";
 import { useMembers } from "@/hooks/useMembers";
 import { useAuth } from "@/contexts/AuthContext";
-import { PiggyBank, Plus, Loader2, Calendar, Lock } from "lucide-react";
+import { PiggyBank, Plus, Loader2, Calendar, Lock, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +19,7 @@ const Deposits = () => {
   const { data: deposits, isLoading } = useDeposits();
   const { data: members } = useMembers();
   const createDeposit = useCreateDeposit();
+  const deleteDeposit = useDeleteDeposit();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -42,6 +44,10 @@ const Deposits = () => {
 
     setFormData({ user_id: "", amount: "", notes: "" });
     setIsDialogOpen(false);
+  };
+
+  const handleDelete = async (id: string) => {
+    await deleteDeposit.mutateAsync(id);
   };
 
   const totalDeposits = deposits?.reduce((sum, d) => sum + d.amount, 0) || 0;
@@ -183,7 +189,35 @@ const Deposits = () => {
                       </div>
                     </div>
                   </div>
-                  <p className="font-bold text-success text-lg">+৳{deposit.amount.toLocaleString()}</p>
+                  <div className="flex items-center gap-4">
+                    <p className="font-bold text-success text-lg">+৳{deposit.amount.toLocaleString()}</p>
+                    {isAdmin && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/20">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent className="glass-card border-white/10">
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Deposit</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete this deposit of ৳{deposit.amount.toLocaleString()} from {deposit.user_name}? This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDelete(deposit.id)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

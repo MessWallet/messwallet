@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
 export interface Budget {
@@ -18,7 +17,7 @@ export interface Budget {
 export const useBudgets = () => {
   return useQuery({
     queryKey: ["budgets"],
-    queryFn: async () => {
+    queryFn: async (): Promise<Budget[]> => {
       const { data, error } = await supabase
         .from("monthly_budgets")
         .select("*")
@@ -26,7 +25,7 @@ export const useBudgets = () => {
         .order("month", { ascending: false });
 
       if (error) throw error;
-      return data as Budget[];
+      return data;
     },
   });
 };
@@ -36,8 +35,8 @@ export const useCurrentBudget = () => {
   const currentYear = new Date().getFullYear();
 
   return useQuery({
-    queryKey: ["current-budget", currentMonth, currentYear],
-    queryFn: async () => {
+    queryKey: ["current-budget"],
+    queryFn: async (): Promise<Budget | null> => {
       const { data, error } = await supabase
         .from("monthly_budgets")
         .select("*")
@@ -46,36 +45,28 @@ export const useCurrentBudget = () => {
         .maybeSingle();
 
       if (error) throw error;
-      return data as Budget | null;
+      return data;
     },
   });
 };
 
 export const useCreateBudget = () => {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async (data: {
       month: number;
       year: number;
       budget_amount: number;
-      low_balance_threshold?: number;
+      low_balance_threshold: number;
     }) => {
-      const { error } = await supabase.from("monthly_budgets").insert({
-        month: data.month,
-        year: data.year,
-        budget_amount: data.budget_amount,
-        low_balance_threshold: data.low_balance_threshold || 5000,
-      });
-
+      const { error } = await supabase.from("monthly_budgets").insert(data);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["budgets"] });
       queryClient.invalidateQueries({ queryKey: ["current-budget"] });
-      queryClient.invalidateQueries({ queryKey: ["finance-stats"] });
-      toast.success("Budget created successfully");
+      toast.success("Budget created successfully!");
     },
     onError: (error: Error) => {
       toast.error(error.message);
@@ -89,23 +80,41 @@ export const useUpdateBudget = () => {
   return useMutation({
     mutationFn: async (data: {
       id: string;
-      budget_amount?: number;
-      low_balance_threshold?: number;
-      is_locked?: boolean;
+      budget_amount: number;
+      low_balance_threshold: number;
     }) => {
-      const { id, ...updateData } = data;
       const { error } = await supabase
         .from("monthly_budgets")
-        .update(updateData)
-        .eq("id", id);
-
+        .update({
+          budget_amount: data.budget_amount,
+          low_balance_threshold: data.low_balance_threshold,
+        })
+        .eq("id", data.id);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["budgets"] });
       queryClient.invalidateQueries({ queryKey: ["current-budget"] });
-      queryClient.invalidateQueries({ queryKey: ["finance-stats"] });
-      toast.success("Budget updated successfully");
+      toast.success("Budget updated successfully!");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+};
+
+export const useDeleteBudget = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("monthly_budgets").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["budgets"] });
+      queryClient.invalidateQueries({ queryKey: ["current-budget"] });
+      toast.success("Budget deleted successfully!");
     },
     onError: (error: Error) => {
       toast.error(error.message);
