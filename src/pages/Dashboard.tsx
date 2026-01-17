@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { BalanceCard } from "@/components/dashboard/BalanceCard";
 import { StatCard } from "@/components/dashboard/StatCard";
@@ -5,8 +6,11 @@ import { MemberCarousel } from "@/components/dashboard/MemberCarousel";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { useFinanceStats } from "@/hooks/useFinanceStats";
 import { useMembers } from "@/hooks/useMembers";
-import { useExpenses } from "@/hooks/useExpenses";
+import { useExpenses, useCreateExpense } from "@/hooks/useExpenses";
+import { useCreateDeposit } from "@/hooks/useDeposits";
 import { useTodayMealsSummary } from "@/hooks/useMeals";
+import { useCategories } from "@/hooks/useCategories";
+import { useAuth } from "@/contexts/AuthContext";
 import { 
   Users, 
   Calendar, 
@@ -14,15 +18,74 @@ import {
   Utensils,
   Receipt,
   AlertTriangle,
-  Loader2
+  Loader2,
+  Plus,
+  PiggyBank
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
 
 const Dashboard = () => {
+  const { isAdmin, user } = useAuth();
   const { data: stats, isLoading: statsLoading } = useFinanceStats();
   const { data: members, isLoading: membersLoading } = useMembers();
   const { data: expenses, isLoading: expensesLoading } = useExpenses(5);
   const { data: mealsData } = useTodayMealsSummary();
+  const { data: categories } = useCategories();
+  const createExpense = useCreateExpense();
+  const createDeposit = useCreateDeposit();
+
+  const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
+  const [isDepositDialogOpen, setIsDepositDialogOpen] = useState(false);
+
+  const [expenseForm, setExpenseForm] = useState({
+    item_name: "",
+    amount: "",
+    paid_by: "",
+    category_id: "",
+  });
+
+  const [depositForm, setDepositForm] = useState({
+    user_id: "",
+    amount: "",
+    notes: "",
+  });
+
+  const handleAddExpense = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!expenseForm.item_name || !expenseForm.amount || !expenseForm.paid_by) {
+      toast.error("Please fill required fields");
+      return;
+    }
+    await createExpense.mutateAsync({
+      item_name: expenseForm.item_name,
+      amount: parseFloat(expenseForm.amount),
+      paid_by: expenseForm.paid_by,
+      category_id: expenseForm.category_id || undefined,
+    });
+    setExpenseForm({ item_name: "", amount: "", paid_by: "", category_id: "" });
+    setIsExpenseDialogOpen(false);
+  };
+
+  const handleAddDeposit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!depositForm.user_id || !depositForm.amount) {
+      toast.error("Please fill required fields");
+      return;
+    }
+    await createDeposit.mutateAsync({
+      user_id: depositForm.user_id,
+      amount: parseFloat(depositForm.amount),
+      notes: depositForm.notes || undefined,
+    });
+    setDepositForm({ user_id: "", amount: "", notes: "" });
+    setIsDepositDialogOpen(false);
+  };
 
   const isLoading = statsLoading || membersLoading;
 
@@ -48,6 +111,140 @@ const Dashboard = () => {
   return (
     <DashboardLayout title="Dashboard" titleBn="ড্যাশবোর্ড">
       <div className="space-y-6">
+        {/* Quick Actions */}
+        <div className="flex gap-3 flex-wrap">
+          <Dialog open={isExpenseDialogOpen} onOpenChange={setIsExpenseDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <Plus className="w-4 h-4" />
+                Add Expense
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="glass-card border-white/10">
+              <DialogHeader>
+                <DialogTitle>Quick Add Expense</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleAddExpense} className="space-y-4">
+                <div>
+                  <Label>Item Name *</Label>
+                  <Input
+                    value={expenseForm.item_name}
+                    onChange={(e) => setExpenseForm({ ...expenseForm, item_name: e.target.value })}
+                    placeholder="e.g., Rice"
+                    className="bg-white/5 border-white/10"
+                  />
+                </div>
+                <div>
+                  <Label>Amount (৳) *</Label>
+                  <Input
+                    type="number"
+                    value={expenseForm.amount}
+                    onChange={(e) => setExpenseForm({ ...expenseForm, amount: e.target.value })}
+                    placeholder="0"
+                    className="bg-white/5 border-white/10"
+                  />
+                </div>
+                <div>
+                  <Label>Paid By *</Label>
+                  <Select 
+                    value={expenseForm.paid_by} 
+                    onValueChange={(v) => setExpenseForm({ ...expenseForm, paid_by: v })}
+                  >
+                    <SelectTrigger className="bg-white/5 border-white/10">
+                      <SelectValue placeholder="Select member" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {members?.map((m) => (
+                        <SelectItem key={m.user_id} value={m.user_id}>{m.full_name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Category</Label>
+                  <Select 
+                    value={expenseForm.category_id} 
+                    onValueChange={(v) => setExpenseForm({ ...expenseForm, category_id: v })}
+                  >
+                    <SelectTrigger className="bg-white/5 border-white/10">
+                      <SelectValue placeholder="Optional" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories?.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>{c.name_bn || c.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button type="submit" className="w-full" disabled={createExpense.isPending}>
+                  {createExpense.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Add Expense"}
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+
+          {isAdmin && (
+            <Dialog open={isDepositDialogOpen} onOpenChange={setIsDepositDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="gap-2 border-success/30 text-success hover:bg-success/10">
+                  <PiggyBank className="w-4 h-4" />
+                  Add Deposit
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="glass-card border-white/10">
+                <DialogHeader>
+                  <DialogTitle>Add Deposit</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleAddDeposit} className="space-y-4">
+                  <div>
+                    <Label>Member *</Label>
+                    <Select 
+                      value={depositForm.user_id} 
+                      onValueChange={(v) => setDepositForm({ ...depositForm, user_id: v })}
+                    >
+                      <SelectTrigger className="bg-white/5 border-white/10">
+                        <SelectValue placeholder="Select member" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {members?.map((m) => (
+                          <SelectItem key={m.user_id} value={m.user_id}>
+                            <div className="flex items-center gap-2">
+                              <img src={m.avatar_url} className="w-5 h-5 rounded-full" alt="" />
+                              {m.full_name}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Amount (৳) *</Label>
+                    <Input
+                      type="number"
+                      value={depositForm.amount}
+                      onChange={(e) => setDepositForm({ ...depositForm, amount: e.target.value })}
+                      placeholder="0"
+                      className="bg-white/5 border-white/10"
+                    />
+                  </div>
+                  <div>
+                    <Label>Notes</Label>
+                    <Input
+                      value={depositForm.notes}
+                      onChange={(e) => setDepositForm({ ...depositForm, notes: e.target.value })}
+                      placeholder="Optional"
+                      className="bg-white/5 border-white/10"
+                    />
+                  </div>
+                  <Button type="submit" className="w-full" disabled={createDeposit.isPending}>
+                    {createDeposit.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Add Deposit"}
+                  </Button>
+                </form>
+              </DialogContent>
+            </Dialog>
+          )}
+        </div>
+
         {/* Balance and Stats Row */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-1">

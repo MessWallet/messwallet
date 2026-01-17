@@ -14,6 +14,8 @@ export interface Deposit {
   // Joined data
   user_name?: string;
   user_avatar?: string;
+  added_by_name?: string;
+  added_by_avatar?: string;
 }
 
 export interface CreateDepositData {
@@ -29,10 +31,7 @@ export const useDeposits = (limit?: number) => {
     queryFn: async (): Promise<Deposit[]> => {
       let query = supabase
         .from("deposits")
-        .select(`
-          *,
-          profiles!deposits_user_id_fkey(full_name, avatar_url)
-        `)
+        .select("*")
         .order("created_at", { ascending: false });
 
       if (limit) {
@@ -40,13 +39,23 @@ export const useDeposits = (limit?: number) => {
       }
 
       const { data, error } = await query;
-
       if (error) throw error;
+
+      // Fetch profiles separately
+      const userIds = [...new Set(data.flatMap((d: any) => [d.user_id, d.added_by]))];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, full_name, avatar_url")
+        .in("user_id", userIds);
+
+      const profileMap = new Map(profiles?.map((p: any) => [p.user_id, p]));
 
       return data.map((deposit: any) => ({
         ...deposit,
-        user_name: deposit.profiles?.full_name,
-        user_avatar: deposit.profiles?.avatar_url,
+        user_name: profileMap.get(deposit.user_id)?.full_name,
+        user_avatar: profileMap.get(deposit.user_id)?.avatar_url,
+        added_by_name: profileMap.get(deposit.added_by)?.full_name,
+        added_by_avatar: profileMap.get(deposit.added_by)?.avatar_url,
       }));
     },
   });
