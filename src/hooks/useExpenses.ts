@@ -88,19 +88,46 @@ export const useCreateExpense = () => {
     mutationFn: async (data: CreateExpenseData) => {
       if (!user) throw new Error("Not authenticated");
 
-      const { error } = await supabase.from("expenses").insert({
+      const { data: expense, error } = await supabase.from("expenses").insert({
         ...data,
         added_by: user.id,
         expense_date: data.expense_date || new Date().toISOString().split("T")[0],
         expense_type: data.expense_type || "market",
         is_emergency: data.is_emergency || false,
-      });
+      }).select().single();
 
       if (error) throw error;
+
+      // Get current user's profile for notification
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("user_id", user.id)
+        .single();
+
+      // Get all user profiles for notifications
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id");
+
+      if (profiles) {
+        const notifications = profiles.map((p) => ({
+          user_id: p.user_id,
+          title: "New Expense Added",
+          message: `${profile?.full_name || "Someone"} added an expense: ${data.item_name} - ৳${data.amount}`,
+          type: "info",
+        }));
+
+        await supabase.from("notifications").insert(notifications);
+      }
+
+      return expense;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["expenses"] });
       queryClient.invalidateQueries({ queryKey: ["finance-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications-unread"] });
       toast.success("Expense added successfully!");
     },
     onError: (error: Error) => {
