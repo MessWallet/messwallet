@@ -172,6 +172,8 @@ const Deposits = () => {
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Calendar className="w-3 h-3" />
                         {format(new Date(deposit.deposit_date), "MMM dd, yyyy")}
+                        <span>•</span>
+                        <span className="text-xs">Added by {deposit.added_by_name}</span>
                         {deposit.notes && (
                           <>
                             <span>•</span>

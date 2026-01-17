@@ -9,7 +9,8 @@ import {
   Bell,
   LogOut,
   PiggyBank,
-  ChevronLeft
+  ChevronLeft,
+  Shield
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -26,7 +27,7 @@ const navItems = [
 export const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { signOut } = useAuth();
+  const { signOut, isAdmin } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
 
   const handleLogout = async () => {
@@ -72,6 +73,20 @@ export const Sidebar = () => {
       </nav>
 
       <div className="p-4 border-t border-sidebar-border space-y-2">
+        {isAdmin && (
+          <Link 
+            to="/admin" 
+            className={cn("nav-item", location.pathname === "/admin" && "active")}
+          >
+            <Shield className="w-5 h-5" />
+            {!collapsed && (
+              <div>
+                <span className="font-medium">Admin Panel</span>
+                <span className="text-xs text-muted-foreground block font-bengali">অ্যাডমিন</span>
+              </div>
+            )}
+          </Link>
+        )}
         <button onClick={handleLogout} className="nav-item w-full text-destructive hover:bg-destructive/10">
           <LogOut className="w-5 h-5" />
           {!collapsed && <span>Logout</span>}

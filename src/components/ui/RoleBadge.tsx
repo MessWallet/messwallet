@@ -5,6 +5,7 @@ type Role = "founder" | "secondary_admin" | "tertiary_admin" | "admin" | "member
 interface RoleBadgeProps {
   role: Role;
   className?: string;
+  size?: "sm" | "md";
 }
 
 const roleLabels: Record<Role, string> = {
@@ -23,11 +24,12 @@ const roleStyles: Record<Role, string> = {
   member: "bg-white/10 text-muted-foreground border-white/20",
 };
 
-export const RoleBadge = ({ role, className }: RoleBadgeProps) => {
+export const RoleBadge = ({ role, className, size = "md" }: RoleBadgeProps) => {
   return (
     <span 
       className={cn(
-        "inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium uppercase tracking-wider border",
+        "inline-flex items-center rounded-full font-medium uppercase tracking-wider border",
+        size === "sm" ? "px-1.5 py-0.5 text-[8px]" : "px-2 py-0.5 text-[10px]",
         roleStyles[role],
         className
       )}
