@@ -5,13 +5,14 @@ import { useExpenses, useCreateExpense, useDeleteExpense } from "@/hooks/useExpe
 import { useCategories } from "@/hooks/useCategories";
 import { useMembers } from "@/hooks/useMembers";
 import { useAuth } from "@/contexts/AuthContext";
-import { Receipt, Plus, Search, Filter, Calendar, Loader2, AlertTriangle, Trash2 } from "lucide-react";
+import { Receipt, Plus, Search, Filter, Calendar, Loader2, AlertTriangle, Trash2, Users } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -38,27 +39,59 @@ const Expenses = () => {
     expense_type: "market",
     is_emergency: false,
     notes: "",
+    from_all: false, // New: split among all members
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.item_name || !formData.amount || !formData.paid_by) {
+    if (!formData.item_name || !formData.amount) {
       toast.error("Please fill in all required fields");
       return;
     }
 
-    await createExpense.mutateAsync({
-      item_name: formData.item_name,
-      amount: parseFloat(formData.amount),
-      quantity: formData.quantity ? parseFloat(formData.quantity) : undefined,
-      unit: formData.unit || undefined,
-      category_id: formData.category_id || undefined,
-      paid_by: formData.paid_by,
-      expense_type: formData.expense_type,
-      is_emergency: formData.is_emergency,
-      notes: formData.notes || undefined,
-    });
+    if (!formData.from_all && !formData.paid_by) {
+      toast.error("Please select who paid or enable 'From All'");
+      return;
+    }
+
+    const totalAmount = parseFloat(formData.amount);
+
+    if (formData.from_all && members && members.length > 0) {
+      // Split expense among all members
+      const perPersonAmount = Math.round((totalAmount / members.length) * 100) / 100;
+      
+      // Create individual expenses for each member
+      const promises = members.map((member) =>
+        createExpense.mutateAsync({
+          item_name: `${formData.item_name} (Split)`,
+          amount: perPersonAmount,
+          quantity: formData.quantity ? parseFloat(formData.quantity) / members.length : undefined,
+          unit: formData.unit || undefined,
+          category_id: formData.category_id || undefined,
+          paid_by: member.user_id,
+          expense_type: formData.expense_type,
+          is_emergency: formData.is_emergency,
+          notes: `Split from ৳${totalAmount} among ${members.length} members. ${formData.notes || ""}`.trim(),
+        })
+      );
+
+      await Promise.all(promises);
+      toast.success(`Expense split among ${members.length} members (৳${perPersonAmount} each)`);
+    } else {
+      // Normal single expense
+      await createExpense.mutateAsync({
+        item_name: formData.item_name,
+        amount: totalAmount,
+        quantity: formData.quantity ? parseFloat(formData.quantity) : undefined,
+        unit: formData.unit || undefined,
+        category_id: formData.category_id || undefined,
+        paid_by: formData.paid_by,
+        expense_type: formData.expense_type,
+        is_emergency: formData.is_emergency,
+        notes: formData.notes || undefined,
+      });
+    }
 
     setFormData({
       item_name: "",
@@ -70,6 +103,7 @@ const Expenses = () => {
       expense_type: "market",
       is_emergency: false,
       notes: "",
+      from_all: false,
     });
     setIsDialogOpen(false);
   };
@@ -85,9 +119,40 @@ const Expenses = () => {
     return matchesSearch && matchesCategory;
   });
 
+  // Calculate totals
+  const totalExpenses = expenses?.reduce((sum, e) => sum + Number(e.amount), 0) || 0;
+  const todayExpenses = expenses?.filter(e => e.expense_date === new Date().toISOString().split("T")[0])
+    .reduce((sum, e) => sum + Number(e.amount), 0) || 0;
+
   return (
     <DashboardLayout title="Expenses" titleBn="খরচ">
       <div className="space-y-6">
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <GlassCard className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-destructive/20">
+                <Receipt className="w-5 h-5 text-destructive" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Total Expenses</p>
+                <p className="text-xl font-bold text-destructive">৳{totalExpenses.toLocaleString()}</p>
+              </div>
+            </div>
+          </GlassCard>
+          <GlassCard className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-warning/20">
+                <Calendar className="w-5 h-5 text-warning" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Today's Expenses</p>
+                <p className="text-xl font-bold text-warning">৳{todayExpenses.toLocaleString()}</p>
+              </div>
+            </div>
+          </GlassCard>
+        </div>
+
         {/* Header with actions */}
         <div className="flex flex-col md:flex-row gap-4 justify-between">
           <div className="flex flex-1 gap-3">
@@ -185,24 +250,6 @@ const Expenses = () => {
                     </Select>
                   </div>
                   <div>
-                    <Label>Paid By *</Label>
-                    <Select 
-                      value={formData.paid_by} 
-                      onValueChange={(value) => setFormData({ ...formData, paid_by: value })}
-                    >
-                      <SelectTrigger className="bg-white/5 border-white/10">
-                        <SelectValue placeholder="Select" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {members?.map((member) => (
-                          <SelectItem key={member.user_id} value={member.user_id}>
-                            {member.full_name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
                     <Label>Type</Label>
                     <Select 
                       value={formData.expense_type} 
@@ -218,6 +265,56 @@ const Expenses = () => {
                       </SelectContent>
                     </Select>
                   </div>
+
+                  {/* From All Toggle */}
+                  <div className="col-span-2 p-4 rounded-xl bg-primary/10 border border-primary/30">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Users className="w-5 h-5 text-primary" />
+                        <div>
+                          <Label className="text-base font-medium">From All Members</Label>
+                          <p className="text-xs text-muted-foreground">
+                            Split equally among all {members?.length || 0} members
+                          </p>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={formData.from_all}
+                        onCheckedChange={(checked) => setFormData({ ...formData, from_all: checked, paid_by: "" })}
+                      />
+                    </div>
+                    {formData.from_all && formData.amount && members && members.length > 0 && (
+                      <p className="mt-2 text-sm text-primary font-medium">
+                        ৳{(parseFloat(formData.amount) / members.length).toFixed(2)} per person
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Paid By - only show if not "From All" */}
+                  {!formData.from_all && (
+                    <div className="col-span-2">
+                      <Label>Paid By *</Label>
+                      <Select 
+                        value={formData.paid_by} 
+                        onValueChange={(value) => setFormData({ ...formData, paid_by: value })}
+                      >
+                        <SelectTrigger className="bg-white/5 border-white/10">
+                          <SelectValue placeholder="Select member" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {members?.map((member) => (
+                            <SelectItem key={member.user_id} value={member.user_id}>
+                              <div className="flex items-center gap-2">
+                                <img src={member.avatar_url} className="w-5 h-5 rounded-full" alt="" />
+                                {member.full_name}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
                   <div className="flex items-center gap-2">
                     <input
                       type="checkbox"
@@ -240,6 +337,8 @@ const Expenses = () => {
                 <Button type="submit" className="w-full" disabled={createExpense.isPending}>
                   {createExpense.isPending ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : formData.from_all ? (
+                    `Split Among ${members?.length || 0} Members`
                   ) : (
                     "Add Expense"
                   )}
@@ -286,6 +385,12 @@ const Expenses = () => {
                       <p className="font-medium">{expense.item_name}</p>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <span>by {expense.paid_by_name}</span>
+                        {expense.added_by_name && expense.added_by !== expense.paid_by && (
+                          <>
+                            <span>•</span>
+                            <span>added by {expense.added_by_name}</span>
+                          </>
+                        )}
                         <span>•</span>
                         <span className="flex items-center gap-1">
                           <Calendar className="w-3 h-3" />
@@ -302,7 +407,7 @@ const Expenses = () => {
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="text-right">
-                      <p className="font-bold text-destructive">-৳{expense.amount.toLocaleString()}</p>
+                      <p className="font-bold text-destructive">-৳{Number(expense.amount).toLocaleString()}</p>
                       {expense.quantity && (
                         <p className="text-xs text-muted-foreground">
                           {expense.quantity} {expense.unit}
@@ -320,7 +425,7 @@ const Expenses = () => {
                           <AlertDialogHeader>
                             <AlertDialogTitle>Delete Expense</AlertDialogTitle>
                             <AlertDialogDescription>
-                              Are you sure you want to delete "{expense.item_name}"? This action cannot be undone.
+                              Are you sure you want to delete "{expense.item_name}"?
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
