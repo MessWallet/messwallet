@@ -50,14 +50,13 @@ export const useDeposits = (limit?: number) => {
 
       const profileMap = new Map(profiles?.map((p: any) => [p.user_id, p]));
 
-      // Map and sort by serial_position
+      // Map deposits with profile info
       const deposits = data.map((deposit: any) => ({
         ...deposit,
         user_name: profileMap.get(deposit.user_id)?.full_name,
         user_avatar: profileMap.get(deposit.user_id)?.avatar_url,
         added_by_name: profileMap.get(deposit.added_by)?.full_name,
         added_by_avatar: profileMap.get(deposit.added_by)?.avatar_url,
-        _serial: profileMap.get(deposit.user_id)?.serial_position || 999,
       }));
 
       return deposits;

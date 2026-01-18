@@ -57,10 +57,10 @@ export const useTodayMealsSummary = () => {
   return useQuery({
     queryKey: ["today-meals-summary"],
     queryFn: async () => {
-      // Get all profiles
+      // Get all profiles with serial_position for sorting
       const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
-        .select("user_id, full_name, avatar_url");
+        .select("user_id, full_name, avatar_url, serial_position");
 
       if (profilesError) throw profilesError;
 
@@ -72,8 +72,15 @@ export const useTodayMealsSummary = () => {
 
       if (mealsError) throw mealsError;
 
+      // Get user roles to identify founder
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("user_id, role");
+
+      const roleMap = new Map(roles?.map((r: any) => [r.user_id, r.role]));
+
       // Combine - default to true if no meal record exists
-      const summary: TodayMealSummary[] = profiles.map((profile) => {
+      const summary = profiles.map((profile) => {
         const meal = meals.find((m) => m.user_id === profile.user_id);
         return {
           userId: profile.user_id,
@@ -81,7 +88,16 @@ export const useTodayMealsSummary = () => {
           userAvatar: profile.avatar_url,
           lunch: meal?.lunch ?? true,
           dinner: meal?.dinner ?? true,
+          _serialPosition: profile.serial_position || 999,
+          _role: roleMap.get(profile.user_id) || "member",
         };
+      });
+
+      // Sort by serial_position, founder always first
+      summary.sort((a, b) => {
+        if (a._role === "founder") return -1;
+        if (b._role === "founder") return 1;
+        return (a._serialPosition || 999) - (b._serialPosition || 999);
       });
 
       const lunchCount = summary.filter((s) => s.lunch).length;

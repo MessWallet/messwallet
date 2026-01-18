@@ -291,15 +291,19 @@ const AdminPanel = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {nonFounderMembers?.map((member) => (
+              {nonFounderMembers?.map((member, index) => (
                 <div
                   key={member.id}
                   className="flex items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/10"
                 >
+                  {/* Serial number badge */}
+                  <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center font-bold text-sm text-muted-foreground shrink-0">
+                    {member.serial_position || (index + 2)}
+                  </div>
                   <img
                     src={member.avatar_url}
                     alt={member.full_name}
-                    className="w-14 h-14 rounded-xl object-cover"
+                    className="w-12 h-12 rounded-xl object-cover"
                   />
                   <div className="flex-1 min-w-0">
                     <p className="font-medium truncate">{member.full_name}</p>

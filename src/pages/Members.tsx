@@ -55,20 +55,20 @@ const Members = () => {
                   transition={{ delay: index * 0.05 }}
                 >
                   <GlassCard 
-                    className="p-6 hover:scale-[1.02] transition-transform cursor-pointer"
+                    className="p-6 hover:scale-[1.02] transition-transform cursor-pointer relative"
                     onClick={() => handleMemberClick(member.user_id)}
                   >
-                    <div className="flex items-start gap-4">
-                      {/* Serial Number Badge */}
-                      <div className="absolute top-3 right-3">
-                        <span className={cn(
-                          "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold",
-                          member.role === "founder" ? "bg-warning/20 text-warning" : "bg-white/10 text-muted-foreground"
-                        )}>
-                          #{member.serial_position || index + 1}
-                        </span>
-                      </div>
+                    {/* Serial Number Badge */}
+                    <div className="absolute top-3 right-3">
+                      <span className={cn(
+                        "w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold",
+                        member.role === "founder" ? "bg-warning/20 text-warning" : "bg-white/10 text-muted-foreground"
+                      )}>
+                        #{member.serial_position || index + 1}
+                      </span>
+                    </div>
 
+                    <div className="flex items-start gap-4 pr-8">
                       <img
                         src={member.avatar_url}
                         alt={member.full_name}

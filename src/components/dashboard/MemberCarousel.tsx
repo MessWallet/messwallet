@@ -26,14 +26,9 @@ export const MemberCarousel = ({ members, onMemberClick }: MemberCarouselProps) 
   const [rotatingIndex, setRotatingIndex] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Sort to ensure founder is always first
-  const sortedMembers = [...members].sort((a, b) => {
-    if (a.role === "founder") return -1;
-    if (b.role === "founder") return 1;
-    if (a.role === "admin") return -1;
-    if (b.role === "admin") return 1;
-    return 0;
-  });
+  // Members are already sorted by serial_position from useMembers hook
+  // No need to re-sort - just use them as-is
+  const sortedMembers = members;
 
   const handlePrev = () => {
     setActiveIndex((prev) => (prev === 0 ? sortedMembers.length - 1 : prev - 1));
