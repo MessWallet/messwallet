@@ -185,14 +185,16 @@ const MemberProfile = () => {
                 <div className="space-y-2 max-h-48 overflow-y-auto">
                   {memberDeposits.slice(0, 10).map((deposit) => (
                     <div key={deposit.id} className="flex items-center justify-between p-2 rounded-lg bg-white/5">
-                      <div>
+                      <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-success">+৳{Number(deposit.amount).toLocaleString()}</p>
                         <p className="text-xs text-muted-foreground">
                           {format(new Date(deposit.deposit_date), "MMM dd, yyyy")}
                         </p>
                       </div>
                       {deposit.notes && (
-                        <p className="text-xs text-muted-foreground max-w-[120px] truncate">{deposit.notes}</p>
+                        <p className="text-xs text-primary bg-primary/10 px-2 py-1 rounded max-w-[140px] truncate">
+                          {deposit.notes.replace("Purpose: ", "")}
+                        </p>
                       )}
                     </div>
                   ))}
