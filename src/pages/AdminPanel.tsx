@@ -11,6 +11,7 @@ import { useDeleteMember } from "@/hooks/useDeleteMember";
 import { DataDeletionSection } from "@/components/admin/DataDeletionSection";
 import { GlobalNotificationSection } from "@/components/admin/GlobalNotificationSection";
 import { MemberSerialControl } from "@/components/admin/MemberSerialControl";
+import { ChatDeletionSection } from "@/components/admin/ChatDeletionSection";
 import {
   Shield,
   Settings,
@@ -275,6 +276,10 @@ const AdminPanel = () => {
 
         {/* Data Deletion Center */}
         <DataDeletionSection />
+
+        {/* Chat Deletion (Admin Only) */}
+        <ChatDeletionSection />
+        
         <GlassCard className="p-6 border-destructive/20">
           <div className="flex items-center gap-3 mb-4">
             <UserX className="w-5 h-5 text-destructive" />
