@@ -12,6 +12,7 @@ export interface Member {
   totalDeposit: number;
   totalExpense: number;
   mealCount: number;
+  serial_position: number;
 }
 
 export const useMembers = () => {
@@ -77,11 +78,22 @@ export const useMembers = () => {
           totalDeposit,
           totalExpense,
           mealCount,
+          serial_position: profile.serial_position || 999,
         };
       });
 
-      // Sort: founder first, then admins, then members
+      // Sort: first by serial_position, then by role as fallback
       return members.sort((a, b) => {
+        // Founder always first
+        if (a.role === "founder") return -1;
+        if (b.role === "founder") return 1;
+        
+        // Then by serial_position
+        if (a.serial_position !== b.serial_position) {
+          return a.serial_position - b.serial_position;
+        }
+        
+        // Fallback to role order
         const roleOrder = { founder: 0, secondary_admin: 1, tertiary_admin: 2, member: 3 };
         return roleOrder[a.role] - roleOrder[b.role];
       });

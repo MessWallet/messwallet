@@ -270,8 +270,10 @@ export type Database = {
           full_name: string
           id: string
           phone: string | null
+          serial_position: number | null
           updated_at: string
           user_id: string
+          welcome_shown: boolean | null
         }
         Insert: {
           avatar_url: string
@@ -280,8 +282,10 @@ export type Database = {
           full_name: string
           id?: string
           phone?: string | null
+          serial_position?: number | null
           updated_at?: string
           user_id: string
+          welcome_shown?: boolean | null
         }
         Update: {
           avatar_url?: string
@@ -290,8 +294,10 @@ export type Database = {
           full_name?: string
           id?: string
           phone?: string | null
+          serial_position?: number | null
           updated_at?: string
           user_id?: string
+          welcome_shown?: boolean | null
         }
         Relationships: []
       }
