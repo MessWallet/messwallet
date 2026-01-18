@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { ReactNode, CSSProperties, HTMLAttributes, forwardRef } from "react";
+import { ReactNode, CSSProperties, HTMLAttributes } from "react";
 
 interface GlassCardProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
@@ -8,20 +8,22 @@ interface GlassCardProps extends HTMLAttributes<HTMLDivElement> {
   style?: CSSProperties;
 }
 
-export const GlassCard = forwardRef<HTMLDivElement, GlassCardProps>(
-  ({ children, className, variant = "default", style, ...props }, ref) => {
-    const variants = {
-      default: "glass-card",
-      strong: "glass-card-strong",
-      balance: "balance-card",
-    };
+export const GlassCard = ({ 
+  children, 
+  className, 
+  variant = "default", 
+  style, 
+  ...props 
+}: GlassCardProps) => {
+  const variants = {
+    default: "glass-card",
+    strong: "glass-card-strong",
+    balance: "balance-card",
+  };
 
-    return (
-      <div ref={ref} className={cn(variants[variant], className)} style={style} {...props}>
-        {children}
-      </div>
-    );
-  }
-);
-
-GlassCard.displayName = "GlassCard";
+  return (
+    <div className={cn(variants[variant], className)} style={style} {...props}>
+      {children}
+    </div>
+  );
+};
