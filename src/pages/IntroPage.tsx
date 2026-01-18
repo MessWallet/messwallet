@@ -1,6 +1,5 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { 
   Wallet, 
   Utensils, 
@@ -17,6 +16,7 @@ import { GlassCard } from "@/components/ui/GlassCard";
 import { Button } from "@/components/ui/button";
 import natureBg from "@/assets/nature-bg.jpg";
 import logo from "@/assets/logo.png";
+import founderPhoto from "@/assets/founder-photo.jpg";
 
 const features = [
   {
@@ -59,11 +59,6 @@ const features = [
 
 const IntroPage = () => {
   const navigate = useNavigate();
-  const [activeSection, setActiveSection] = useState<string | null>("about");
-
-  const toggleSection = (section: string) => {
-    setActiveSection(activeSection === section ? null : section);
-  };
 
   return (
     <div className="min-h-screen relative overflow-hidden">
@@ -81,12 +76,12 @@ const IntroPage = () => {
             key={i}
             className="absolute w-1 h-1 bg-primary/30 rounded-full"
             initial={{ 
-              x: Math.random() * window.innerWidth, 
-              y: Math.random() * window.innerHeight,
+              x: Math.random() * (typeof window !== 'undefined' ? window.innerWidth : 400), 
+              y: Math.random() * (typeof window !== 'undefined' ? window.innerHeight : 800),
               opacity: 0 
             }}
             animate={{ 
-              y: [null, Math.random() * window.innerHeight],
+              y: [null, Math.random() * (typeof window !== 'undefined' ? window.innerHeight : 800)],
               opacity: [0, 0.8, 0]
             }}
             transition={{ 
@@ -152,190 +147,127 @@ const IntroPage = () => {
           </motion.div>
         </motion.div>
 
-        {/* Content Sections */}
+        {/* Content Sections - All visible by default */}
         <div className="px-4 pb-32 space-y-4 max-w-2xl mx-auto w-full">
           {/* About Section */}
-          <GlassCard 
-            className="p-4 cursor-pointer transition-all hover:bg-white/10"
-            onClick={() => toggleSection("about")}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
           >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
+            <GlassCard className="p-4">
+              <div className="flex items-center gap-3 mb-3">
                 <Sparkles className="w-5 h-5 text-primary" />
                 <h3 className="font-semibold">About MessWallet</h3>
               </div>
-              <motion.div
-                animate={{ rotate: activeSection === "about" ? 180 : 0 }}
-                transition={{ duration: 0.3 }}
-              >
-                <ChevronDown className="w-5 h-5 text-muted-foreground" />
-              </motion.div>
-            </div>
-            
-            <AnimatePresence>
-              {activeSection === "about" && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="overflow-hidden"
-                >
-                  <p className="mt-4 text-muted-foreground text-sm leading-relaxed">
-                    MessWallet is a comprehensive student mess management application designed to simplify 
-                    the complex task of tracking shared expenses, meal schedules, and financial contributions 
-                    in a group living environment. Born from the real challenges faced by students, it 
-                    provides a transparent, fair, and efficient way to manage mess finances.
-                  </p>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </GlassCard>
+              <p className="text-muted-foreground text-sm leading-relaxed">
+                MessWallet is a comprehensive student mess management application designed to simplify 
+                the complex task of tracking shared expenses, meal schedules, and financial contributions 
+                in a group living environment. Born from the real challenges faced by students, it 
+                provides a transparent, fair, and efficient way to manage mess finances.
+              </p>
+            </GlassCard>
+          </motion.div>
 
           {/* Features Section */}
-          <GlassCard 
-            className="p-4 cursor-pointer transition-all hover:bg-white/10"
-            onClick={() => toggleSection("features")}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
           >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
+            <GlassCard className="p-4">
+              <div className="flex items-center gap-3 mb-3">
                 <PieChart className="w-5 h-5 text-secondary" />
                 <h3 className="font-semibold">Key Features</h3>
               </div>
-              <motion.div
-                animate={{ rotate: activeSection === "features" ? 180 : 0 }}
-                transition={{ duration: 0.3 }}
-              >
-                <ChevronDown className="w-5 h-5 text-muted-foreground" />
-              </motion.div>
-            </div>
-            
-            <AnimatePresence>
-              {activeSection === "features" && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="overflow-hidden"
-                >
-                  <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {features.map((feature, index) => (
-                      <motion.div 
-                        key={feature.title}
-                        className="p-3 rounded-xl bg-white/5 border border-white/10"
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                      >
-                        <feature.icon className={`w-5 h-5 ${feature.color} mb-2`} />
-                        <h4 className="font-medium text-sm">{feature.title}</h4>
-                        <p className="text-xs text-muted-foreground mt-1">{feature.description}</p>
-                      </motion.div>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </GlassCard>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {features.map((feature, index) => (
+                  <motion.div 
+                    key={feature.title}
+                    className="p-3 rounded-xl bg-white/5 border border-white/10"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.3 + index * 0.1 }}
+                  >
+                    <feature.icon className={`w-5 h-5 ${feature.color} mb-2`} />
+                    <h4 className="font-medium text-sm">{feature.title}</h4>
+                    <p className="text-xs text-muted-foreground mt-1">{feature.description}</p>
+                  </motion.div>
+                ))}
+              </div>
+            </GlassCard>
+          </motion.div>
 
-          {/* About Founder Section */}
-          <GlassCard 
-            className="p-4 cursor-pointer transition-all hover:bg-white/10"
-            onClick={() => toggleSection("founder")}
+          {/* About Founder Section - Always visible */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
           >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
+            <GlassCard className="p-4">
+              <div className="flex items-center gap-3 mb-4">
                 <Users className="w-5 h-5 text-warning" />
                 <h3 className="font-semibold">About the Founder</h3>
               </div>
-              <motion.div
-                animate={{ rotate: activeSection === "founder" ? 180 : 0 }}
-                transition={{ duration: 0.3 }}
-              >
-                <ChevronDown className="w-5 h-5 text-muted-foreground" />
-              </motion.div>
-            </div>
-            
-            <AnimatePresence>
-              {activeSection === "founder" && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="overflow-hidden"
-                >
-                  <div className="mt-4 flex flex-col items-center text-center">
-                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/30 to-secondary/30 flex items-center justify-center mb-3 border-2 border-white/20">
-                      <span className="text-3xl font-bold text-gradient-primary">M</span>
-                    </div>
-                    <h4 className="font-semibold text-lg">Mahfuz Ahmed Rony</h4>
-                    <p className="text-sm text-primary">Founder & Developer</p>
-                    <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
-                      A passionate developer who created MessWallet to solve the everyday challenges 
-                      of managing shared living expenses. With a vision to make student life easier, 
-                      this app was built with love and dedication to serve the mess community.
-                    </p>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </GlassCard>
+              <div className="flex flex-col items-center text-center">
+                <div className="relative w-28 h-28 mb-4">
+                  <img 
+                    src={founderPhoto} 
+                    alt="Mahfuz Ahmed Rony" 
+                    className="w-full h-full rounded-2xl object-cover border-2 border-warning/30 shadow-lg"
+                  />
+                  <motion.div
+                    className="absolute -inset-1 bg-warning/20 rounded-2xl blur-lg -z-10"
+                    animate={{ scale: [1, 1.1, 1], opacity: [0.5, 0.8, 0.5] }}
+                    transition={{ duration: 3, repeat: Infinity }}
+                  />
+                </div>
+                <h4 className="font-semibold text-lg">Mahfuz Ahmed Rony</h4>
+                <p className="text-sm text-warning">Founder & Developer</p>
+                <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
+                  A passionate developer who created MessWallet to solve the everyday challenges 
+                  of managing shared living expenses. With a vision to make student life easier, 
+                  this app was built with love and dedication to serve the mess community.
+                </p>
+              </div>
+            </GlassCard>
+          </motion.div>
 
           {/* Why MessWallet Section */}
-          <GlassCard 
-            className="p-4 cursor-pointer transition-all hover:bg-white/10"
-            onClick={() => toggleSection("why")}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
           >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
+            <GlassCard className="p-4">
+              <div className="flex items-center gap-3 mb-3">
                 <Shield className="w-5 h-5 text-success" />
                 <h3 className="font-semibold">Why MessWallet?</h3>
               </div>
-              <motion.div
-                animate={{ rotate: activeSection === "why" ? 180 : 0 }}
-                transition={{ duration: 0.3 }}
-              >
-                <ChevronDown className="w-5 h-5 text-muted-foreground" />
-              </motion.div>
-            </div>
-            
-            <AnimatePresence>
-              {activeSection === "why" && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="overflow-hidden"
-                >
-                  <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
-                    <li className="flex items-start gap-2">
-                      <ChevronRight className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                      <span>No more confusion about who paid what and when</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <ChevronRight className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                      <span>Automatic per-head cost calculation based on meal attendance</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <ChevronRight className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                      <span>Real-time balance updates and low balance alerts</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <ChevronRight className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                      <span>Complete transparency with detailed expense history</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <ChevronRight className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                      <span>Role-based permissions for secure management</span>
-                    </li>
-                  </ul>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </GlassCard>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <ChevronRight className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                  <span>No more confusion about who paid what and when</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <ChevronRight className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                  <span>Automatic per-head cost calculation based on meal attendance</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <ChevronRight className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                  <span>Real-time balance updates and low balance alerts</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <ChevronRight className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                  <span>Complete transparency with detailed expense history</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <ChevronRight className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                  <span>Role-based permissions for secure management</span>
+                </li>
+              </ul>
+            </GlassCard>
+          </motion.div>
         </div>
 
         {/* Fixed Bottom Buttons */}

@@ -7,6 +7,7 @@ import {
   LogOut,
   PiggyBank,
   ChevronLeft,
+  ChevronDown,
   Shield,
   History,
   User
@@ -14,6 +15,10 @@ import {
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useMembers } from "@/hooks/useMembers";
+import { RoleBadge } from "@/components/ui/RoleBadge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { motion, AnimatePresence } from "framer-motion";
 import logo from "@/assets/logo.png";
 
 const navItems = [
@@ -21,7 +26,6 @@ const navItems = [
   { icon: Receipt, label: "Expenses", labelBn: "খরচ", path: "/expenses" },
   { icon: Utensils, label: "Meals", labelBn: "খাবার", path: "/meals" },
   { icon: PiggyBank, label: "Deposits", labelBn: "জমা", path: "/deposits" },
-  { icon: Users, label: "Members", labelBn: "সদস্য", path: "/members" },
   { icon: History, label: "History", labelBn: "ইতিহাস", path: "/history" },
 ];
 
@@ -29,11 +33,17 @@ export const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut, isAdmin, profile } = useAuth();
+  const { data: members } = useMembers();
   const [collapsed, setCollapsed] = useState(false);
+  const [membersExpanded, setMembersExpanded] = useState(false);
 
   const handleLogout = async () => {
     await signOut();
     navigate("/auth");
+  };
+
+  const handleMemberClick = (userId: string) => {
+    navigate(`/member/${userId}`);
   };
 
   return (
@@ -68,6 +78,80 @@ export const Sidebar = () => {
             </Link>
           );
         })}
+
+        {/* Members Section with Dropdown */}
+        <div className="space-y-1">
+          <button
+            onClick={() => setMembersExpanded(!membersExpanded)}
+            className={cn(
+              "nav-item w-full justify-between",
+              location.pathname === "/members" && "active"
+            )}
+          >
+            <div className="flex items-center gap-3">
+              <Users className="w-5 h-5 shrink-0" />
+              {!collapsed && (
+                <div className="text-left">
+                  <span className="font-medium">Members</span>
+                  <span className="text-xs text-muted-foreground block font-bengali">সদস্য</span>
+                </div>
+              )}
+            </div>
+            {!collapsed && (
+              <motion.div
+                animate={{ rotate: membersExpanded ? 180 : 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <ChevronDown className="w-4 h-4 text-muted-foreground" />
+              </motion.div>
+            )}
+          </button>
+
+          {/* Members List */}
+          <AnimatePresence>
+            {membersExpanded && !collapsed && members && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <ScrollArea className="max-h-[200px]">
+                  <div className="pl-4 space-y-1 py-1">
+                    {/* View All Button */}
+                    <Link
+                      to="/members"
+                      className="flex items-center gap-2 p-2 rounded-lg text-xs hover:bg-white/10 transition-colors text-primary"
+                    >
+                      <Users className="w-3 h-3" />
+                      <span>View All Members</span>
+                    </Link>
+
+                    {/* Individual Members - sorted by serial */}
+                    {members.map((member) => (
+                      <button
+                        key={member.id}
+                        onClick={() => handleMemberClick(member.user_id)}
+                        className="flex items-center gap-2 p-2 rounded-lg hover:bg-white/10 transition-colors w-full text-left"
+                      >
+                        <img
+                          src={member.avatar_url}
+                          alt={member.full_name}
+                          className="w-6 h-6 rounded-full object-cover"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium truncate">{member.full_name}</p>
+                          <RoleBadge role={member.role} size="xs" />
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </nav>
 
       <div className="p-4 border-t border-sidebar-border space-y-2">

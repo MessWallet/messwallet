@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, Reorder } from "framer-motion";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { RoleBadge } from "@/components/ui/RoleBadge";
@@ -10,7 +10,8 @@ import {
   Save,
   Loader2,
   ListOrdered,
-  Crown
+  Crown,
+  CheckCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQueryClient } from "@tanstack/react-query";
@@ -20,22 +21,22 @@ export const MemberSerialControl = () => {
   const [orderedMembers, setOrderedMembers] = useState<Member[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   const queryClient = useQueryClient();
 
   useEffect(() => {
     if (members) {
-      // Sort by serial_position if available, otherwise by role
+      // Sort by serial_position, founder always first
       const sorted = [...members].sort((a, b) => {
-        // Founder always first
         if (a.role === "founder") return -1;
         if (b.role === "founder") return 1;
-        return 0;
+        return (a.serial_position || 999) - (b.serial_position || 999);
       });
       setOrderedMembers(sorted);
     }
   }, [members]);
 
-  const handleReorder = (newOrder: Member[]) => {
+  const handleReorder = useCallback((newOrder: Member[]) => {
     // Keep founder at position 1
     const founder = newOrder.find(m => m.role === "founder");
     const others = newOrder.filter(m => m.role !== "founder");
@@ -43,12 +44,15 @@ export const MemberSerialControl = () => {
     const finalOrder = founder ? [founder, ...others] : newOrder;
     setOrderedMembers(finalOrder);
     setHasChanges(true);
-  };
+    setSaveSuccess(false);
+  }, []);
 
   const handleSave = async () => {
     setIsSaving(true);
+    setSaveSuccess(false);
+    
     try {
-      // Update each member's serial position
+      // Update each member's serial position in parallel for speed
       const updates = orderedMembers.map((member, index) => 
         supabase
           .from("profiles")
@@ -63,9 +67,20 @@ export const MemberSerialControl = () => {
         throw new Error("Failed to update some positions");
       }
 
-      toast.success("Member order saved successfully!");
+      // Invalidate all relevant queries immediately
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["members"] }),
+        queryClient.invalidateQueries({ queryKey: ["meals"] }),
+        queryClient.invalidateQueries({ queryKey: ["deposits"] }),
+        queryClient.invalidateQueries({ queryKey: ["expenses"] }),
+      ]);
+
+      toast.success("Member order saved and applied everywhere!");
       setHasChanges(false);
-      queryClient.invalidateQueries({ queryKey: ["members"] });
+      setSaveSuccess(true);
+      
+      // Reset success state after 3 seconds
+      setTimeout(() => setSaveSuccess(false), 3000);
     } catch (error) {
       console.error("Error saving order:", error);
       toast.error("Failed to save member order");
@@ -92,10 +107,20 @@ export const MemberSerialControl = () => {
           <h3 className="text-lg font-semibold">Member Serial Control</h3>
           <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded-full">Founder Only</span>
         </div>
-        {hasChanges && (
+        <div className="flex items-center gap-2">
+          {saveSuccess && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex items-center gap-1 text-success text-sm"
+            >
+              <CheckCircle className="w-4 h-4" />
+              <span>Saved!</span>
+            </motion.div>
+          )}
           <Button
             onClick={handleSave}
-            disabled={isSaving}
+            disabled={isSaving || !hasChanges}
             className="gap-2"
             size="sm"
           >
@@ -106,11 +131,11 @@ export const MemberSerialControl = () => {
             )}
             Save Order
           </Button>
-        )}
+        </div>
       </div>
 
       <p className="text-sm text-muted-foreground mb-4">
-        Drag and drop members to set their display order across the app. Founder position is fixed at #1.
+        Drag and drop members to set their display order. Changes apply to carousel, members page, meals, deposits, and all lists.
       </p>
 
       <Reorder.Group
@@ -132,6 +157,7 @@ export const MemberSerialControl = () => {
               }`}
               whileHover={{ scale: member.role !== "founder" ? 1.01 : 1 }}
               whileTap={{ scale: member.role !== "founder" ? 0.99 : 1 }}
+              layout
             >
               {/* Serial Number */}
               <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm ${
@@ -176,7 +202,7 @@ export const MemberSerialControl = () => {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          You have unsaved changes. Click "Save Order" to apply.
+          You have unsaved changes. Click "Save Order" to apply everywhere.
         </motion.p>
       )}
     </GlassCard>
