@@ -1,48 +1,91 @@
 import { useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { GlassCard } from "@/components/ui/GlassCard";
-import { useDeposits, useCreateDeposit, useDeleteDeposit } from "@/hooks/useDeposits";
+import { useDeposits, useCreateDeposit, useDeleteDeposit, useCreateBulkDeposit } from "@/hooks/useDeposits";
 import { useMembers } from "@/hooks/useMembers";
 import { useAuth } from "@/contexts/AuthContext";
-import { PiggyBank, Plus, Loader2, Calendar, Lock, Trash2 } from "lucide-react";
+import { PiggyBank, Plus, Loader2, Calendar, Lock, Trash2, Users } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
 import { toast } from "sonner";
+
+const DEPOSIT_PURPOSES = [
+  { value: "food_expense", label: "Food Expense" },
+  { value: "electricity_bill", label: "Electricity Bill" },
+  { value: "mess_rent", label: "Mess Rent" },
+  { value: "maid_salary", label: "Maid Monthly Salary" },
+  { value: "wifi_bill", label: "WiFi Bill" },
+  { value: "gas_bill", label: "Gas Bill" },
+  { value: "water_bill", label: "Water Bill" },
+  { value: "other", label: "Other (Custom)" },
+];
 
 const Deposits = () => {
   const { isAdmin } = useAuth();
   const { data: deposits, isLoading } = useDeposits();
   const { data: members } = useMembers();
   const createDeposit = useCreateDeposit();
+  const createBulkDeposit = useCreateBulkDeposit();
   const deleteDeposit = useDeleteDeposit();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [paidByAll, setPaidByAll] = useState(false);
   const [formData, setFormData] = useState({
     user_id: "",
     amount: "",
+    purpose: "",
+    customPurpose: "",
     notes: "",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.user_id || !formData.amount) {
-      toast.error("Please fill in all required fields");
+    if (!formData.amount) {
+      toast.error("Please enter an amount");
       return;
     }
 
-    await createDeposit.mutateAsync({
-      user_id: formData.user_id,
-      amount: parseFloat(formData.amount),
-      notes: formData.notes || undefined,
-    });
+    const purpose = formData.purpose === "other" ? formData.customPurpose : 
+      DEPOSIT_PURPOSES.find(p => p.value === formData.purpose)?.label || formData.purpose;
 
-    setFormData({ user_id: "", amount: "", notes: "" });
+    if (!purpose) {
+      toast.error("Please select or enter a purpose");
+      return;
+    }
+
+    const notes = `Purpose: ${purpose}${formData.notes ? ` | ${formData.notes}` : ""}`;
+
+    if (paidByAll && members) {
+      // Split amount equally among all members
+      const perMemberAmount = parseFloat(formData.amount) / members.length;
+      
+      await createBulkDeposit.mutateAsync({
+        amount: perMemberAmount,
+        notes,
+      });
+    } else {
+      if (!formData.user_id) {
+        toast.error("Please select a member");
+        return;
+      }
+
+      await createDeposit.mutateAsync({
+        user_id: formData.user_id,
+        amount: parseFloat(formData.amount),
+        notes,
+      });
+    }
+
+    setFormData({ user_id: "", amount: "", purpose: "", customPurpose: "", notes: "" });
+    setPaidByAll(false);
     setIsDialogOpen(false);
   };
 
@@ -76,36 +119,54 @@ const Deposits = () => {
                     Add Deposit
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="glass-card border-white/10">
+                <DialogContent className="glass-card border-white/10 max-w-md">
                   <DialogHeader>
                     <DialogTitle>Add New Deposit</DialogTitle>
                   </DialogHeader>
                   <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                      <Label>Member *</Label>
-                      <Select 
-                        value={formData.user_id} 
-                        onValueChange={(value) => setFormData({ ...formData, user_id: value })}
-                      >
-                        <SelectTrigger className="bg-white/5 border-white/10">
-                          <SelectValue placeholder="Select member" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {members?.map((member) => (
-                            <SelectItem key={member.user_id} value={member.user_id}>
-                              <div className="flex items-center gap-2">
-                                <img 
-                                  src={member.avatar_url} 
-                                  alt="" 
-                                  className="w-6 h-6 rounded-full"
-                                />
-                                {member.full_name}
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                    {/* Paid by All Toggle */}
+                    <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10">
+                      <div className="flex items-center gap-3">
+                        <Users className="w-5 h-5 text-primary" />
+                        <div>
+                          <p className="font-medium text-sm">Paid by All</p>
+                          <p className="text-xs text-muted-foreground">Split equally among all members</p>
+                        </div>
+                      </div>
+                      <Switch 
+                        checked={paidByAll} 
+                        onCheckedChange={setPaidByAll}
+                      />
                     </div>
+
+                    {!paidByAll && (
+                      <div>
+                        <Label>Member *</Label>
+                        <Select 
+                          value={formData.user_id} 
+                          onValueChange={(value) => setFormData({ ...formData, user_id: value })}
+                        >
+                          <SelectTrigger className="bg-white/5 border-white/10">
+                            <SelectValue placeholder="Select member" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {members?.map((member) => (
+                              <SelectItem key={member.user_id} value={member.user_id}>
+                                <div className="flex items-center gap-2">
+                                  <img 
+                                    src={member.avatar_url} 
+                                    alt="" 
+                                    className="w-6 h-6 rounded-full"
+                                  />
+                                  {member.full_name}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
                     <div>
                       <Label>Amount (৳) *</Label>
                       <Input
@@ -115,19 +176,64 @@ const Deposits = () => {
                         placeholder="0.00"
                         className="bg-white/5 border-white/10"
                       />
+                      {paidByAll && members && formData.amount && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          ৳{(parseFloat(formData.amount) / members.length).toFixed(2)} per member ({members.length} members)
+                        </p>
+                      )}
                     </div>
+
                     <div>
-                      <Label>Notes</Label>
-                      <Input
+                      <Label>Purpose *</Label>
+                      <Select 
+                        value={formData.purpose} 
+                        onValueChange={(value) => setFormData({ ...formData, purpose: value })}
+                      >
+                        <SelectTrigger className="bg-white/5 border-white/10">
+                          <SelectValue placeholder="Select purpose" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {DEPOSIT_PURPOSES.map((purpose) => (
+                            <SelectItem key={purpose.value} value={purpose.value}>
+                              {purpose.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {formData.purpose === "other" && (
+                      <div>
+                        <Label>Custom Purpose *</Label>
+                        <Input
+                          value={formData.customPurpose}
+                          onChange={(e) => setFormData({ ...formData, customPurpose: e.target.value })}
+                          placeholder="Enter purpose..."
+                          className="bg-white/5 border-white/10"
+                        />
+                      </div>
+                    )}
+
+                    <div>
+                      <Label>Additional Notes</Label>
+                      <Textarea
                         value={formData.notes}
                         onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                         placeholder="Optional notes..."
-                        className="bg-white/5 border-white/10"
+                        className="bg-white/5 border-white/10 resize-none"
+                        rows={2}
                       />
                     </div>
-                    <Button type="submit" className="w-full" disabled={createDeposit.isPending}>
-                      {createDeposit.isPending ? (
+
+                    <Button 
+                      type="submit" 
+                      className="w-full" 
+                      disabled={createDeposit.isPending || createBulkDeposit.isPending}
+                    >
+                      {(createDeposit.isPending || createBulkDeposit.isPending) ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : paidByAll ? (
+                        `Add Deposit for All Members`
                       ) : (
                         "Add Deposit"
                       )}
@@ -180,13 +286,12 @@ const Deposits = () => {
                         {format(new Date(deposit.deposit_date), "MMM dd, yyyy")}
                         <span>•</span>
                         <span className="text-xs">Added by {deposit.added_by_name}</span>
-                        {deposit.notes && (
-                          <>
-                            <span>•</span>
-                            <span>{deposit.notes}</span>
-                          </>
-                        )}
                       </div>
+                      {deposit.notes && (
+                        <p className="text-xs text-muted-foreground/80 mt-1 line-clamp-1">
+                          {deposit.notes}
+                        </p>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-4">

@@ -45,18 +45,22 @@ export const useDeposits = (limit?: number) => {
       const userIds = [...new Set(data.flatMap((d: any) => [d.user_id, d.added_by]))];
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("user_id, full_name, avatar_url")
+        .select("user_id, full_name, avatar_url, serial_position")
         .in("user_id", userIds);
 
       const profileMap = new Map(profiles?.map((p: any) => [p.user_id, p]));
 
-      return data.map((deposit: any) => ({
+      // Map and sort by serial_position
+      const deposits = data.map((deposit: any) => ({
         ...deposit,
         user_name: profileMap.get(deposit.user_id)?.full_name,
         user_avatar: profileMap.get(deposit.user_id)?.avatar_url,
         added_by_name: profileMap.get(deposit.added_by)?.full_name,
         added_by_avatar: profileMap.get(deposit.added_by)?.avatar_url,
+        _serial: profileMap.get(deposit.user_id)?.serial_position || 999,
       }));
+
+      return deposits;
     },
   });
 };
@@ -104,12 +108,70 @@ export const useCreateDeposit = () => {
       return deposit;
     },
     onSuccess: () => {
+      // Invalidate all related queries immediately
       queryClient.invalidateQueries({ queryKey: ["deposits"] });
       queryClient.invalidateQueries({ queryKey: ["finance-stats"] });
       queryClient.invalidateQueries({ queryKey: ["members"] });
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
       queryClient.invalidateQueries({ queryKey: ["notifications-unread"] });
       toast.success("Deposit added successfully!");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+};
+
+export const useCreateBulkDeposit = () => {
+  const queryClient = useQueryClient();
+  const { user, isAdmin } = useAuth();
+
+  return useMutation({
+    mutationFn: async (data: { amount: number; notes?: string }) => {
+      if (!user) throw new Error("Not authenticated");
+      if (!isAdmin) throw new Error("Only admins can add deposits");
+
+      // Get all members
+      const { data: profiles, error: profilesError } = await supabase
+        .from("profiles")
+        .select("user_id, full_name");
+
+      if (profilesError) throw profilesError;
+      if (!profiles || profiles.length === 0) throw new Error("No members found");
+
+      const today = new Date().toISOString().split("T")[0];
+
+      // Create deposits for all members
+      const deposits = profiles.map((p) => ({
+        user_id: p.user_id,
+        amount: data.amount,
+        notes: data.notes,
+        added_by: user.id,
+        deposit_date: today,
+      }));
+
+      const { error } = await supabase.from("deposits").insert(deposits);
+      if (error) throw error;
+
+      // Create notifications for all users
+      const notifications = profiles.map((p) => ({
+        user_id: p.user_id,
+        title: "Bulk Deposit Added",
+        message: `৳${data.amount.toFixed(2)} deposited for all members`,
+        type: "success",
+      }));
+
+      await supabase.from("notifications").insert(notifications);
+
+      return { count: profiles.length };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["deposits"] });
+      queryClient.invalidateQueries({ queryKey: ["finance-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["members"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications-unread"] });
+      toast.success(`Deposit added for ${data.count} members!`);
     },
     onError: (error: Error) => {
       toast.error(error.message);
