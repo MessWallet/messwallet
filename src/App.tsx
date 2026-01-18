@@ -6,7 +6,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { SplashScreen } from "@/components/SplashScreen";
+import { WelcomeMessage } from "@/components/WelcomeMessage";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import IntroPage from "./pages/IntroPage";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Expenses from "./pages/Expenses";
@@ -16,6 +18,7 @@ import Members from "./pages/Members";
 import AdminPanel from "./pages/AdminPanel";
 import Profile from "./pages/Profile";
 import History from "./pages/History";
+import MemberProfile from "./pages/MemberProfile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,8 +34,9 @@ const App = () => {
         {showSplash && <SplashScreen onComplete={() => setShowSplash(false)} />}
         <BrowserRouter>
           <AuthProvider>
+            <WelcomeMessage />
             <Routes>
-              <Route path="/" element={<Navigate to="/auth" replace />} />
+              <Route path="/" element={<IntroPage />} />
               <Route path="/auth" element={<Auth />} />
               <Route
                 path="/dashboard"
@@ -95,6 +99,14 @@ const App = () => {
                 element={
                   <ProtectedRoute>
                     <History />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/member/:userId"
+                element={
+                  <ProtectedRoute>
+                    <MemberProfile />
                   </ProtectedRoute>
                 }
               />

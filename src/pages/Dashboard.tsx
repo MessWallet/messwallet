@@ -101,6 +101,7 @@ const Dashboard = () => {
 
   const carouselMembers = members?.map(m => ({
     id: m.id,
+    user_id: m.user_id,
     name: m.full_name,
     role: m.role === "secondary_admin" || m.role === "tertiary_admin" ? "admin" as const : m.role as "founder" | "member",
     avatar: m.avatar_url,

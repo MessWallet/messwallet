@@ -10,6 +10,7 @@ import { useUpdateUserRole, useClearAllData } from "@/hooks/useRoles";
 import { useDeleteMember } from "@/hooks/useDeleteMember";
 import { DataDeletionSection } from "@/components/admin/DataDeletionSection";
 import { GlobalNotificationSection } from "@/components/admin/GlobalNotificationSection";
+import { MemberSerialControl } from "@/components/admin/MemberSerialControl";
 import {
   Shield,
   Settings,
@@ -265,6 +266,9 @@ const AdminPanel = () => {
             </div>
         </GlassCard>
         )}
+
+        {/* Member Serial Control (Founder Only) */}
+        {isFounder && <MemberSerialControl />}
 
         {/* Global Notification Sender */}
         <GlobalNotificationSection />
